@@ -8,11 +8,12 @@ def run(context):
     try:
         app = adsk.core.Application.get()
         ui  = app.userInterface
-        design = adsk.fusion.Design.cast(app.activeProduct)
-        rootComp = design.rootComponent
-        sketches = rootComp.sketches
+        # design = adsk.fusion.Design.cast(app.activeProduct)
+        # rootComp = design.rootComponent
+        # sketches = rootComp.sketches
         
-        sketch: adsk.fusion.Sketch = sketches.add(rootComp.xYConstructionPlane)
+        # sketch: adsk.fusion.Sketch = sketches.add(rootComp.xYConstructionPlane)
+        sketch = adsk.fusion.Sketch.cast(app.activeEditObject)
         sketchLines = sketch.sketchCurves.sketchLines
         startPoint = adsk.core.Point3D.create(0,0,0)
         endPoint = adsk.core.Point3D.create(5,5,0)
