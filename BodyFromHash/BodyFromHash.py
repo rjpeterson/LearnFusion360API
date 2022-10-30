@@ -21,7 +21,10 @@ inverseDirections = {
     'ZNEG': 'ZPOS'
 }
 
-def base(decimal ,base) :
+# Convert integer to baseX where x <= 36
+def base(decimal: int, base: int) :
+    if base < 2 or base > 36:
+        raise Exception('Supplied base must be between 2 and 36')
     list = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     answer = ""
     while decimal != 0 :
