@@ -1,7 +1,7 @@
 # LearnFusion360API
 Learning to use the Fusion 360 Python API
 
-Contained are assorted python scripts and add-ins for Fusion 360. Some are custom build by me and others are the result of following tutorials.
+Contained are assorted python scripts and add-ins for Fusion 360. Some are custom built by me and others are the result of following tutorials.
 To install a script:
 - Click the "Scripts and Add-ins" button in the Utilities tab of Fusion 360
 - Click the green plus icon next to "My Scripts"
