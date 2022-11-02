@@ -1,5 +1,5 @@
-#Author-
-#Description-
+#Author- Ryan Peterson
+#Description- This command takes a hash string and the base of that hash string and creates a simple 3D body from it
 
 import adsk.core as core
 import os
@@ -79,7 +79,6 @@ def command_created(args: core.CommandCreatedEventArgs):
     # https://help.autodesk.com/view/fusion360/ENU/?contextId=CommandInputs
     inputs = args.command.commandInputs
 
-    # Define the dialog for your command by adding different inputs to the command.
 
     # Connect to the events that are needed by this command.
     futil.add_handler(args.command.execute, command_execute, local_handlers=local_handlers)
@@ -88,6 +87,7 @@ def command_created(args: core.CommandCreatedEventArgs):
     futil.add_handler(args.command.validateInputs, command_validate_input, local_handlers=local_handlers)
     futil.add_handler(args.command.destroy, command_destroy, local_handlers=local_handlers)
 
+    # Define the dialog for your command by adding different inputs to the command.
     # Create an instance of the BodyFromHash command class.
     global body_from_hash_logic
     body_from_hash_logic = logic.BodyFromHashLogic()
