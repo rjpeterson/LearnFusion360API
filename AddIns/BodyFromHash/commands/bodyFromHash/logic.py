@@ -32,22 +32,21 @@ class BodyFromHashLogic():
         if not skipValidate:
             self.errorMessageTextInput.text = ''
 
-            inputs = args.inputs
-            hashInput: core.StringValueCommandInput = inputs.itemById('hash')
-            baseInput: core.StringValueCommandInput = inputs.itemById('base')
+            # hashInput: core.StringValueCommandInput = inputs.itemById('hash')
+            # baseInput: core.StringValueCommandInput = inputs.itemById('base')
 
             # Verify the validity of the input values. This controls if the OK button is enabled or not.
-            if len(hashInput.value) == 0:
+            if len(self.hashInput.value) == 0:
                 args.areInputsValid = False
                 self.errorMessageTextInput.text = 'Please provide a hash string'
                 return
-            if int(baseInput.value) < 2 or int(baseInput.value) > 36:
+            if int(self.baseInput.value) < 2 or int(self.baseInput.value) > 36:
                 args.areInputsValid = False
                 self.errorMessageTextInput.text = 'Please provide a base between 2 and 36'
                 return
 
             try:
-                int(hashInput.value, int(baseInput.value))
+                int(self.hashInput.value, int(self.baseInput.value))
             except Exception as e:
                 errMsg: str = e.args[0]
                 if errMsg.startswith('invalid literal for int()'):
@@ -57,8 +56,8 @@ class BodyFromHashLogic():
                 else:
                     raise
             args.areInputsValid = True
-            self.hash = hashInput.value
-            self.base = baseInput.value
+            self.hash = self.hashInput.value
+            self.base = self.baseInput.value
 
     def HandleExecute(self, args: core.CommandEventArgs):
         # Get a reference to your command's inputs.
