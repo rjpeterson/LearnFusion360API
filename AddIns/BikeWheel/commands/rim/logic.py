@@ -49,8 +49,8 @@ class RimLogic():
             self.rimInput.listItems.add(rimName, rimName == self.rim)
         
         # Set size dropdown to default rim selection on start, replace with others in HandleInputsChanged
-        for size in rimProfiles[self.rimInput.selectedItem]['sizes'].keys():
-            self.sizeInput.listItems.add(size, size == list(rimProfiles[self.rimInput.selectedItem]['sizes'].keys())[0])
+        for size in rimProfiles[self.rimInput.selectedItem.name]['sizes'].keys():
+            self.sizeInput.listItems.add(size, size == list(rimProfiles[self.rimInput.selectedItem.name]['sizes'].keys())[0])
             
 
         self.errorMessageTextInput = inputs.addTextBoxCommandInput('errMessage', '', '', 2, True)
@@ -64,8 +64,9 @@ class RimLogic():
         if not skipValidate:
             if changedInput.id == 'rim':
                 self.sizeInput.listItems.clear()
-                for size in rimProfiles[self.rimInput.selectedItem]['sizes'].keys():
-                    self.sizeInput.listItems.add(size, size == list(rimProfiles[0]['sizes'].keys())[0])
+                rimSizes = rimProfiles[self.rimInput.selectedItem.name]['sizes'].keys()
+                for size in rimSizes:
+                    self.sizeInput.listItems.add(size, size == list(rimSizes)[0])
 
     def HandleValidateInputs(self, args: core.ValidateInputsEventArgs):
         # unitsMgr = design.unitsManager
@@ -96,14 +97,14 @@ class RimLogic():
         rootComp = design.rootComponent
         importManager = app.importManager
         # Get dxf import options
-        dxfOptions = importManager.createDXF2DImportOptions(rimProfiles['VO Enterprise']['profile'], rootComp.xZConstructionPlane)
-        dxfOptions.isViewFit = False
+        # dxfOptions = importManager.createDXF2DImportOptions(rimProfiles['VO Enterprise']['profile'], rootComp.xZConstructionPlane)
+        # dxfOptions.isViewFit = False
 
         # Set the flag true to merge all the layers of DXF into single sketch.
         # dxfOptions.isSingleSketchResult = True
 
         # Import dxf file to root component
-        importManager.importToTarget(dxfOptions, rootComp)
+        # importManager.importToTarget(dxfOptions, rootComp)
         # createSpoke(
         #     self.bladed,
         #     self.butted,
