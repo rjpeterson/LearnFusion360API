@@ -95,12 +95,17 @@ class SpokeLogic():
         )
 
 def createSpoke(bladed: bool, butted: bool, diameter: float, length: int, straightPull: bool):
-    threadLength = 10 # mm
+    nonRound = True if butted or bladed else False
+    threadLength = 1.0 # cm
+    headDepth = 0.15 # cm
     jBendData = {
-        "headOffest": .305,
-        "bendRadius": .3375,
+        "headOffest": .305, # cm
+        "bendRadius": .3375, # cm
     }
-    # headDiameter = 0.40
+    if  straightPull:
+        adjustedLength = length + headDepth
+    else:
+        adjustedLength = length - jBendData['bendRadius'] + (diameter / 2)
 
     alert = ui.messageBox
     newPoint = core.Point3D.create
@@ -115,18 +120,19 @@ def createSpoke(bladed: bool, butted: bool, diameter: float, length: int, straig
     xYPlane = newComp.xYConstructionPlane
     xZPlane = newComp.xZConstructionPlane
     pathSketch = fusion.Sketch.cast(sketches.add(xYPlane))
+    pathSketch.name = 'pathSketch'
     pathArcs = pathSketch.sketchCurves.sketchArcs
     pathLines = pathSketch.sketchCurves.sketchLines
 
     # Sketch the path for spoke length and j-bend
     if straightPull:
         shaftStart = newPoint(0,0,0)
-        shaftEnd = newPoint(length, 0, 0)
+        shaftEnd = newPoint(adjustedLength, 0, 0)
     else:
         head = pathLines.addByTwoPoints(newPoint(0,0,0), newPoint(jBendData['headOffest'], 0, 0))
         bendCenter = newPoint(jBendData['headOffest'], jBendData['bendRadius'], 0)
         jBend = pathArcs.addByCenterStartSweep(bendCenter, head.endSketchPoint, pi / 2)
-        vector = core.Vector3D.create(0, length, 0)
+        vector = core.Vector3D.create(0, adjustedLength, 0)
         transform = core.Matrix3D.create()
         transform.translation = vector
         pointToCopy = core.ObjectCollection.create()
@@ -147,6 +153,7 @@ def createSpoke(bladed: bool, butted: bool, diameter: float, length: int, straig
     planeInput.setByDistanceOnPath(path, distance)
     profilePlane = newComp.constructionPlanes.add(planeInput)
     profileSketch = fusion.Sketch.cast(newComp.sketches.add(profilePlane))
+    profileSketch.name = ' base diameter sketch'
     profileCircles = profileSketch.sketchCurves.sketchCircles
     profileCircles.addByCenterRadius(newPoint(0,0,0), diameter / 2)
     bodyProfile = profileSketch.profiles.item(0)
@@ -154,14 +161,89 @@ def createSpoke(bladed: bool, butted: bool, diameter: float, length: int, straig
     # Extrude a cylinder along the path
     sweeps = newComp.features.sweepFeatures
     sweepInput = sweeps.createInput(bodyProfile, path, fusion.FeatureOperations.NewBodyFeatureOperation)
+    if nonRound: # Sweep to start of first taper
+        sweepInput.distanceOne = core.ValueInput.createByReal(1.5 / adjustedLength)
+
+    # Sweep first body section
     spokeBody = sweeps.add(sweepInput)
+
+    if not nonRound:
+        # Get face that threads will later be applied to
+        tipFace = spokeBody.endFaces.item(0)
+        for face in spokeBody.sideFaces:
+            for edge in face.edges:
+                if edge == tipFace.edges.item(0):
+                    threadFace = face
+                    break
+
+    if nonRound:
+        profile1 = spokeBody.endFaces.item(0) # Profile 1 (wide end of first taper)
+
+        distance = core.ValueInput.createByReal(1.0)
+        endPlaneInput: fusion.ConstructionPlaneInput = newComp.constructionPlanes.createInput()
+        endPlaneInput.setByDistanceOnPath(path, distance)
+        endPlane = newComp.constructionPlanes.add(endPlaneInput)
+        endSketch: fusion.Sketch = sketches.add(endPlane)
+        endSketch.name = 'endSketch'
+        endSketch.sketchCurves.sketchCircles.addByCenterRadius(newPoint(0,0,0), diameter / 2)
+        profile5 = endSketch.profiles.item(0) # Profile 5 (tip of spoke)
+
+        extrudes = newComp.features.extrudeFeatures
+        endExtrudeInput = extrudes.createInput(profile5, fusion.FeatureOperations.NewBodyFeatureOperation)
+        endExtrudeDistance = fusion.DistanceExtentDefinition.create(core.ValueInput.createByString('15 mm'))
+        endExtrudeInput.setOneSideExtent(endExtrudeDistance, fusion.ExtentDirections.NegativeExtentDirection)
+        endExtrude = extrudes.add(endExtrudeInput) # end section
+
+        tipFace = endExtrude.startFaces.item(0)
+        profile4 = endExtrude.endFaces.item(0) # Profile 4 (wide end of second taper)
+        threadFace = endExtrude.sideFaces.item(0)
+
+        taper1PlaneInput: fusion.ConstructionPlaneInput = newComp.constructionPlanes.createInput()
+        taper1PlaneInput.setByOffset(spokeBody.endFaces.item(0), core.ValueInput.createByString('10 mm'))
+        taper1Plane = newComp.constructionPlanes.add(taper1PlaneInput)
+        taper1Sketch: fusion.Sketch = sketches.add(taper1Plane)
+        taper1Sketch.name = 'taper1Sketch'
+
+        taper2PlaneInput: fusion.ConstructionPlaneInput = newComp.constructionPlanes.createInput()
+        taper2PlaneInput.setByOffset(profile4, core.ValueInput.createByString('10 mm'))
+        taper2Plane = newComp.constructionPlanes.add(taper2PlaneInput)
+        taper2Sketch: fusion.Sketch = sketches.add(taper2Plane)
+        taper2Sketch.name = 'taper2Sketch'
+
+        if butted:
+            taper1Sketch.sketchCurves.sketchCircles.addByCenterRadius(newPoint(0, 0, 0), diameter * .375)
+            profile2 = taper1Sketch.profiles.item(0) # Profile 2 (thin end of first taper)
+            taper2Sketch.sketchCurves.sketchCircles.addByCenterRadius(newPoint(0,0,0), diameter * .375)
+            profile3 = taper2Sketch.profiles.item(0) # Profile 3 (thin end of first taper)
+        if bladed:
+            taper1Sketch.sketchCurves.sketchLines.addTwoPointRectangle(newPoint(0.045, .11, 0), newPoint(-0.045, -.11, 0))
+            profile2 = taper1Sketch.profiles.item(0) # Profile 2 (flat end of first taper)
+            taper2Sketch.sketchCurves.sketchLines.addTwoPointRectangle(newPoint(0.045, .11, 0), newPoint(-0.045, -.11, 0))
+            profile3 = taper2Sketch.profiles.item(0) # Profile 2 (flat end of first taper)
+
+        lofts = newComp.features.loftFeatures
+        taper1Input = lofts.createInput(fusion.FeatureOperations.JoinFeatureOperation)
+        taper1Input.loftSections.add(profile1)
+        taper1Input.loftSections.add(profile2)
+        taper1Loft = lofts.add(taper1Input) # first tapered section
+
+        centerLoftInput = lofts.createInput(fusion.FeatureOperations.JoinFeatureOperation)
+        centerLoftInput.loftSections.add(profile2)
+        centerLoftInput.loftSections.add(profile3)
+        centerLoft = lofts.add(centerLoftInput) # center section
+
+        taper2Input = lofts.createInput(fusion.FeatureOperations.JoinFeatureOperation)
+        taper2Input.loftSections.add(profile3)
+        taper2Input.loftSections.add(profile4)
+        taper2Loft = lofts.add(taper2Input) # second tapered section
+        
 
     # Sketch the spoke head revolve profile
     headSketch = fusion.Sketch.cast(sketches.add(xZPlane))
     headArcs = headSketch.sketchCurves.sketchArcs
     headLines = headSketch.sketchCurves.sketchLines
     point1 = newPoint(0, -diameter / 2, 0)
-    point2 = newPoint(.15, -diameter / 2, 0)
+    point2 = newPoint(headDepth, -diameter / 2, 0)
     arcCenter = newPoint(.1071, -diameter / 2, 0)
     arc = headArcs.addByCenterStartSweep(arcCenter, point1, pi / 2)
     headLines.addByTwoPoints(arc.endSketchPoint, point2)
@@ -198,37 +280,29 @@ def createSpoke(bladed: bool, butted: bool, diameter: float, length: int, straig
     threadInfo = threads.createThreadInfo(False, threadType, threadDesignation, threadClass)
     
     # get the face the thread will be applied to
-    futil.log(f'spokeBody has {len(spokeBody.sideFaces)} faces')
-    endCap = spokeBody.endFaces.item(0)
     planeInput: fusion.ConstructionPlaneInput = newComp.constructionPlanes.createInput()
-    planeInput.setByOffset(endCap, core.ValueInput.createByString(f'-{threadLength} mm'))
+    planeInput.setByOffset(tipFace, core.ValueInput.createByReal(-threadLength))
     threadStartPlane = newComp.constructionPlanes.add(planeInput)
-    for face in endCap.edges.item(0).faces:
-        if face.entityToken != endCap.entityToken:
-            faceToSplit = face
-            break
+    threadStartPlane.name = 'threadStartPlane'
     
     # Get SplitFaceFetures
     splitFaceFeats = rootComp.features.splitFaceFeatures
     
     # Set faces to split
     facesCol = core.ObjectCollection.create()
-    facesCol.add(faceToSplit)
+    facesCol.add(threadFace)
     
     # Create a split face feature of surface intersection split type
     splitFaceInput = splitFaceFeats.createInput(facesCol, threadStartPlane, True)
     split = splitFaceFeats.add(splitFaceInput)
     
     # Get face to add threads to
-    for face in split.faces:
-        if endCap.edges.item(0) in face.edges:
-            entity = face
-            break
+    entity = split.faces.item(0)
 
     # define the thread input with the lenght 10 mm
     threadInput = threads.createInput(entity, threadInfo)
     threadInput.isFullLength = False
-    threadInput.threadLength = core.ValueInput.createByString(f'{threadLength} mm')
+    threadInput.threadLength = core.ValueInput.createByReal(threadLength)
     
     # create the thread
     thread = threads.add(threadInput)
