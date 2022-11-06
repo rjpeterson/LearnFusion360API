@@ -18,14 +18,14 @@ skipValidate = False
 # Rim profiles only list points for one half of the rim, The profile must be mirrored and then extruded for a complete rim body
 rimProfiles = {
     'VO Enterprise': {
-        'profile': './rim_profiles/VOEnterprise.dxf',
+        'profile': '/rim_profiles/VO_Enterprise.dxf',
         'sizes': {
             '700c': 60.52,
             '27': 61.27
         }
     },
     'testRim': {
-        'profile': './rim_profiles/testRim.dxf',
+        'profile': '/rim_profiles/testRim.dxf',
         'sizes': {
             '24': 23.0,
             '650b': 59.2
@@ -34,9 +34,18 @@ rimProfiles = {
 }
 
 class RimLogic():
+    @property
+    def resource_dir(self):
+        try:
+            _resource_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resources')
+            return _resource_dir if os.path.isdir(_resource_dir) else ''
+        except:
+            return ''
+
     def __init__(self) -> None:
         self.rim = 'VO Enterprise'
         self.size = '700c'
+        self.spokes = 32
     
     def CreateCommandInputs(self, inputs: core.CommandInputs):
         global skipValidate
@@ -45,6 +54,13 @@ class RimLogic():
         drop_down_style = core.DropDownStyles.TextListDropDownStyle
         self.rimInput: core.DropDownCommandInput = inputs.addDropDownCommandInput('rim', 'Rim', drop_down_style)
         self.sizeInput: core.DropDownCommandInput = inputs.addDropDownCommandInput('size', 'Size', drop_down_style)
+        self.spokesInput: core.RadioButtonGroupCommandInput = inputs.addRadioButtonGroupCommandInput('spokes', 'Spokes')
+
+        self.spokesInput.listItems.add('24', False)
+        self.spokesInput.listItems.add('28', False)
+        self.spokesInput.listItems.add('32', True)
+        self.spokesInput.listItems.add('36', False)
+
         for rimName in rimProfiles.keys():
             self.rimInput.listItems.add(rimName, rimName == self.rim)
         
@@ -69,265 +85,128 @@ class RimLogic():
                     self.sizeInput.listItems.add(size, size == list(rimSizes)[0])
 
     def HandleValidateInputs(self, args: core.ValidateInputsEventArgs):
-        # unitsMgr = design.unitsManager
-        # if not skipValidate:
-        #     self.errorMessageTextInput.text = ''
-        #     if not self.lengthInput.isValidExpression:
-        #         self.errorMessageTextInput.text = 'The spoke length is invalid'
-        #         args.areInputsValid = False
-        #         return
-                     
-        #     if self.lengthInput.value < 10 or self.lengthInput.value > 50:
-        #         self.errorMessageTextInput.text = 'The spoke length should be between 100 and 500 mm'
-        #         args.areInputsValid = False
-        #         return
-        #     if self.bladedInput.value == True and self.buttedInput.value == True:
-        #         self.errorMessageTextInput.text = 'Bladed and Butted cannot both be checked'
-        #         args.areInputsValid = False
-        #         return
-        #     args.areInputsValid = True
-        #     self.bladed = self.bladedInput.value
-        #     self.butted = self.buttedInput.value
-        #     self.length = unitsMgr.evaluateExpression(self.lengthInput.expression)
-        #     self.diameter = unitsMgr.evaluateExpression(self.diameterInput.selectedItem.name)
-        #     self.straightPull = self.straightPullInput.value
         pass
 
     def HandleExecute(self, args: core.CommandEventArgs):
-        rootComp = design.rootComponent
-        importManager = app.importManager
-        # Get dxf import options
-        # dxfOptions = importManager.createDXF2DImportOptions(rimProfiles['VO Enterprise']['profile'], rootComp.xZConstructionPlane)
-        # dxfOptions.isViewFit = False
-
-        # Set the flag true to merge all the layers of DXF into single sketch.
-        # dxfOptions.isSingleSketchResult = True
-
-        # Import dxf file to root component
-        # importManager.importToTarget(dxfOptions, rootComp)
-        # createSpoke(
-        #     self.bladed,
-        #     self.butted,
-        #     self.diameter,
-        #     self.length,
-        #     self.straightPull
-        # )
-        pass
-
-def createRim(rim: str, size: float):
-    pass
-
-# def createSpoke(bladed: bool, butted: bool, diameter: float, length: int, straightPull: bool):
-#     nonRound = True if butted or bladed else False
-#     threadLength = 1.0 # cm
-#     headDepth = 0.15 # cm
-#     jBendData = {
-#         "headOffest": .305, # cm
-#         "bendRadius": .3375, # cm
-#     }
-#     if  straightPull:
-#         adjustedLength = length + headDepth
-#     else:
-#         adjustedLength = length - jBendData['bendRadius'] + (diameter / 2)
-
-#     alert = ui.messageBox
-#     newPoint = core.Point3D.create
-#     rootComp = design.rootComponent
-
-#     # Create a new component by creating an occurrence.
-#     occurence = rootComp.occurrences.addNewComponent(core.Matrix3D.create())
-#     newComp = occurence.component
-#     newComp.name = f'Spoke {diameter} x {length}'
-
-#     sketches = newComp.sketches
-#     xYPlane = newComp.xYConstructionPlane
-#     xZPlane = newComp.xZConstructionPlane
-#     pathSketch = fusion.Sketch.cast(sketches.add(xYPlane))
-#     pathSketch.name = 'pathSketch'
-#     pathArcs = pathSketch.sketchCurves.sketchArcs
-#     pathLines = pathSketch.sketchCurves.sketchLines
-
-#     # Sketch the path for spoke length and j-bend
-#     if straightPull:
-#         shaftStart = newPoint(0,0,0)
-#         shaftEnd = newPoint(adjustedLength, 0, 0)
-#     else:
-#         head = pathLines.addByTwoPoints(newPoint(0,0,0), newPoint(jBendData['headOffest'], 0, 0))
-#         bendCenter = newPoint(jBendData['headOffest'], jBendData['bendRadius'], 0)
-#         jBend = pathArcs.addByCenterStartSweep(bendCenter, head.endSketchPoint, pi / 2)
-#         vector = core.Vector3D.create(0, adjustedLength, 0)
-#         transform = core.Matrix3D.create()
-#         transform.translation = vector
-#         pointToCopy = core.ObjectCollection.create()
-#         pointToCopy.add(jBend.endSketchPoint)
-#         pointCopy: core.ObjectCollection = pathSketch.copy(pointToCopy, transform)
-#         shaftStart = jBend.endSketchPoint
-#         shaftEnd = pointCopy.item(0)
-#     shaft = pathLines.addByTwoPoints(shaftStart, shaftEnd)
-#     # curveCollection = core.ObjectCollection.create()
-#     # curveCollection.add(head)
-#     # curveCollection.add(jBend)
-#     # curveCollection.add(shaft)
-#     path = newComp.features.createPath(shaft, True)
-
-#     # Sketch the spoke body profile
-#     distance = core.ValueInput.createByReal(0.0)
-#     planeInput: fusion.ConstructionPlaneInput = newComp.constructionPlanes.createInput()
-#     planeInput.setByDistanceOnPath(path, distance)
-#     profilePlane = newComp.constructionPlanes.add(planeInput)
-#     profileSketch = fusion.Sketch.cast(newComp.sketches.add(profilePlane))
-#     profileSketch.name = ' base diameter sketch'
-#     profileCircles = profileSketch.sketchCurves.sketchCircles
-#     profileCircles.addByCenterRadius(newPoint(0,0,0), diameter / 2)
-#     bodyProfile = profileSketch.profiles.item(0)
-
-#     # Extrude a cylinder along the path
-#     sweeps = newComp.features.sweepFeatures
-#     sweepInput = sweeps.createInput(bodyProfile, path, fusion.FeatureOperations.NewBodyFeatureOperation)
-#     if nonRound: # Sweep to start of first taper
-#         sweepInput.distanceOne = core.ValueInput.createByReal(1.5 / adjustedLength)
-
-#     # Sweep first body section
-#     spokeBody = sweeps.add(sweepInput)
-
-#     if not nonRound:
-#         # Get face that threads will later be applied to
-#         tipFace = spokeBody.endFaces.item(0)
-#         for face in spokeBody.sideFaces:
-#             for edge in face.edges:
-#                 if edge == tipFace.edges.item(0):
-#                     threadFace = face
-#                     break
-
-#     if nonRound:
-#         profile1 = spokeBody.endFaces.item(0) # Profile 1 (wide end of first taper)
-
-#         distance = core.ValueInput.createByReal(1.0)
-#         endPlaneInput: fusion.ConstructionPlaneInput = newComp.constructionPlanes.createInput()
-#         endPlaneInput.setByDistanceOnPath(path, distance)
-#         endPlane = newComp.constructionPlanes.add(endPlaneInput)
-#         endSketch: fusion.Sketch = sketches.add(endPlane)
-#         endSketch.name = 'endSketch'
-#         endSketch.sketchCurves.sketchCircles.addByCenterRadius(newPoint(0,0,0), diameter / 2)
-#         profile5 = endSketch.profiles.item(0) # Profile 5 (tip of spoke)
-
-#         extrudes = newComp.features.extrudeFeatures
-#         endExtrudeInput = extrudes.createInput(profile5, fusion.FeatureOperations.NewBodyFeatureOperation)
-#         endExtrudeDistance = fusion.DistanceExtentDefinition.create(core.ValueInput.createByString('15 mm'))
-#         endExtrudeInput.setOneSideExtent(endExtrudeDistance, fusion.ExtentDirections.NegativeExtentDirection)
-#         endExtrude = extrudes.add(endExtrudeInput) # end section
-
-#         tipFace = endExtrude.startFaces.item(0)
-#         profile4 = endExtrude.endFaces.item(0) # Profile 4 (wide end of second taper)
-#         threadFace = endExtrude.sideFaces.item(0)
-
-#         taper1PlaneInput: fusion.ConstructionPlaneInput = newComp.constructionPlanes.createInput()
-#         taper1PlaneInput.setByOffset(spokeBody.endFaces.item(0), core.ValueInput.createByString('10 mm'))
-#         taper1Plane = newComp.constructionPlanes.add(taper1PlaneInput)
-#         taper1Sketch: fusion.Sketch = sketches.add(taper1Plane)
-#         taper1Sketch.name = 'taper1Sketch'
-
-#         taper2PlaneInput: fusion.ConstructionPlaneInput = newComp.constructionPlanes.createInput()
-#         taper2PlaneInput.setByOffset(profile4, core.ValueInput.createByString('10 mm'))
-#         taper2Plane = newComp.constructionPlanes.add(taper2PlaneInput)
-#         taper2Sketch: fusion.Sketch = sketches.add(taper2Plane)
-#         taper2Sketch.name = 'taper2Sketch'
-
-#         if butted:
-#             taper1Sketch.sketchCurves.sketchCircles.addByCenterRadius(newPoint(0, 0, 0), diameter * .375)
-#             profile2 = taper1Sketch.profiles.item(0) # Profile 2 (thin end of first taper)
-#             taper2Sketch.sketchCurves.sketchCircles.addByCenterRadius(newPoint(0,0,0), diameter * .375)
-#             profile3 = taper2Sketch.profiles.item(0) # Profile 3 (thin end of first taper)
-#         if bladed:
-#             taper1Sketch.sketchCurves.sketchLines.addTwoPointRectangle(newPoint(0.045, .11, 0), newPoint(-0.045, -.11, 0))
-#             profile2 = taper1Sketch.profiles.item(0) # Profile 2 (flat end of first taper)
-#             taper2Sketch.sketchCurves.sketchLines.addTwoPointRectangle(newPoint(0.045, .11, 0), newPoint(-0.045, -.11, 0))
-#             profile3 = taper2Sketch.profiles.item(0) # Profile 2 (flat end of first taper)
-
-#         lofts = newComp.features.loftFeatures
-#         taper1Input = lofts.createInput(fusion.FeatureOperations.JoinFeatureOperation)
-#         taper1Input.loftSections.add(profile1)
-#         taper1Input.loftSections.add(profile2)
-#         taper1Loft = lofts.add(taper1Input) # first tapered section
-
-#         centerLoftInput = lofts.createInput(fusion.FeatureOperations.JoinFeatureOperation)
-#         centerLoftInput.loftSections.add(profile2)
-#         centerLoftInput.loftSections.add(profile3)
-#         centerLoft = lofts.add(centerLoftInput) # center section
-
-#         taper2Input = lofts.createInput(fusion.FeatureOperations.JoinFeatureOperation)
-#         taper2Input.loftSections.add(profile3)
-#         taper2Input.loftSections.add(profile4)
-#         taper2Loft = lofts.add(taper2Input) # second tapered section
-        
-
-#     # Sketch the spoke head revolve profile
-#     headSketch = fusion.Sketch.cast(sketches.add(xZPlane))
-#     headArcs = headSketch.sketchCurves.sketchArcs
-#     headLines = headSketch.sketchCurves.sketchLines
-#     point1 = newPoint(0, -diameter / 2, 0)
-#     point2 = newPoint(headDepth, -diameter / 2, 0)
-#     arcCenter = newPoint(.1071, -diameter / 2, 0)
-#     arc = headArcs.addByCenterStartSweep(arcCenter, point1, pi / 2)
-#     headLines.addByTwoPoints(arc.endSketchPoint, point2)
-#     headLines.addByTwoPoints(point2, point1)
-
-#     # Get revolve profile
-#     headProfile = headSketch.profiles.item(0)
-#     if not headProfile:
-#         alert('Could not find head profile')
-
-#     # Revolve the profile
-#     revolves = newComp.features.revolveFeatures
-#     revolveInput = revolves.createInput(headProfile, newComp.xConstructionAxis, fusion.FeatureOperations.JoinFeatureOperation)
-#     angle = core.ValueInput.createByReal(2 * pi)
-#     revolveInput.setAngleExtent(True, angle)
-#     revolves.add(revolveInput)
-
-#     # Add threads to end
-#     threads = newComp.features.threadFeatures
-#     threadDataQuery = threads.threadDataQuery
-#     threadTypes = threadDataQuery.allThreadTypes
-#     threadType = threadTypes[10]
+        rimProfilePath = f'{self.resource_dir}{rimProfiles[self.rimInput.selectedItem.name]["profile"]}'
+        spokeCount = int(self.spokesInput.selectedItem.name)
+        createRim(rimProfilePath, self.rimInput.selectedItem.name, self.sizeInput.selectedItem.name, spokeCount)
     
-#     allsizes = threadDataQuery.allSizes(threadType)
-#     threadSize = allsizes[19]
-    
-#     allDesignations = threadDataQuery.allDesignations(threadType, threadSize)
-#     threadDesignation = allDesignations[0]
-    
-#     allClasses = threadDataQuery.allClasses(False, threadType, threadDesignation)
-#     threadClass = allClasses[0]
+def createRim(rimProfilePath: str, rim: str, size: float, spokeCount: int):
+    schraederRadius = 0.4
+    prestaRadius = 0.3
+    spokeHoleRadius = 0.225
+    nippleHoleRadius = 0.3
 
-#     # create the threadInfo according to the query result
-#     threadInfo = threads.createThreadInfo(False, threadType, threadDesignation, threadClass)
-    
-#     # get the face the thread will be applied to
-#     planeInput: fusion.ConstructionPlaneInput = newComp.constructionPlanes.createInput()
-#     planeInput.setByOffset(tipFace, core.ValueInput.createByReal(-threadLength))
-#     threadStartPlane = newComp.constructionPlanes.add(planeInput)
-#     threadStartPlane.name = 'threadStartPlane'
-    
-#     # Get SplitFaceFetures
-#     splitFaceFeats = rootComp.features.splitFaceFeatures
-    
-#     # Set faces to split
-#     facesCol = core.ObjectCollection.create()
-#     facesCol.add(threadFace)
-    
-#     # Create a split face feature of surface intersection split type
-#     splitFaceInput = splitFaceFeats.createInput(facesCol, threadStartPlane, True)
-#     split = splitFaceFeats.add(splitFaceInput)
-    
-#     # Get face to add threads to
-#     entity = split.faces.item(0)
+    importManager = app.importManager
+    rootComp = design.rootComponent
+    # Create a new component by creating an occurrence.
+    occurence = rootComp.occurrences.addNewComponent(core.Matrix3D.create())
+    newComp = occurence.component
+    newComp.name = f'Rim {rim} x {size} x {spokeCount}'
 
-#     # define the thread input with the lenght 10 mm
-#     threadInput = threads.createInput(entity, threadInfo)
-#     threadInput.isFullLength = False
-#     threadInput.threadLength = core.ValueInput.createByReal(threadLength)
-    
-#     # create the thread
-#     thread = threads.add(threadInput)
+    # Get dxf import options
+    dxfOptions = importManager.createDXF2DImportOptions(rimProfilePath, newComp.xYConstructionPlane)
+    dxfOptions.isViewFit = False
 
-#     newComp.isConstructionFolderLightBulbOn = False
+    # Set the flag true to merge all the layers of DXF into single sketch.
+    dxfOptions.isSingleSketchResult = True
+
+    # Import dxf file to root component
+    importManager.importToTarget(dxfOptions, newComp)
+
+    sketches = newComp.sketches
+
+    # Get profile from imported sketch
+    rimProfileSketch = sketches.item(0)
+    rimProfile = rimProfileSketch.profiles.item(0)
+
+    # Draw line to revolve around
+    rimErd = rimProfiles[rim]['sizes'][size]
+    revolveAxisSketch = fusion.Sketch.cast(sketches.add(newComp.xYConstructionPlane))
+    revolveAxisSketch.name = 'Revolve Axis'
+    lines = revolveAxisSketch.sketchCurves.sketchLines
+    revolveAxis = lines.addByTwoPoints(createPoint(-1, rimErd / 2, 0), createPoint(1, rimErd / 2, 0))
+
+    # Revolve rim profile around axis
+    revolves = newComp.features.revolveFeatures
+    revolveInput = revolves.createInput(rimProfile, revolveAxis, fusion.FeatureOperations.NewBodyFeatureOperation)
+    revolveInput.setAngleExtent(False, core.ValueInput.createByReal(2 * pi))
+    rimRevolve = revolves.add(revolveInput)
+
+    # Mirror and join revolved body
+    mirrors = newComp.features.mirrorFeatures
+    collection = core.ObjectCollection.create()
+    revolveBody = rimRevolve.bodies.item(0)
+    collection.add(revolveBody)
+    mirrorInput = mirrors.createInput(collection, newComp.yZConstructionPlane)
+    mirrorInput.isCombine = True
+    rimMirror = mirrors.add(mirrorInput)
+
+    # Sketch valve hole profile
+    valveHoleSketch = fusion.Sketch.cast(sketches.add(newComp.xYConstructionPlane))
+    valveHoleSketch.name = 'Valve Hole'
+    circles = valveHoleSketch.sketchCurves.sketchCircles
+    circles.addByCenterRadius(createPoint(0, rimErd / 2, 0), schraederRadius)
+    valveHoleProfile = valveHoleSketch.profiles.item(0)
+
+    # Cut valve hole in rim
+    extrudes = newComp.features.extrudeFeatures
+    extrudeInput = extrudes.createInput(valveHoleProfile, fusion.FeatureOperations.CutFeatureOperation)
+    extentDef = fusion.ThroughAllExtentDefinition.create()
+    extendDir = fusion.ExtentDirections.NegativeExtentDirection
+    extrudeInput.setOneSideExtent(extentDef, extendDir)
+    extrudes.add(extrudeInput)
+
+    # Cut spoke holes in rim
+    # Create angled plane for first extrude cut
+    constructionPlanes = newComp.constructionPlanes
+    spokeHolePlaneInput: fusion.ConstructionPlaneInput = constructionPlanes.createInput()
+    spokeHolePlaneInput.setByAngle(revolveAxis, core.ValueInput.createByReal(2 * pi / spokeCount / 2), newComp.xYConstructionPlane)
+    spokeHolePlane = constructionPlanes.add(spokeHolePlaneInput)
+
+    # Create sketch for spoke hole cut
+    spokeHoleSketch = fusion.Sketch.cast(sketches.add(spokeHolePlane))
+    circles = spokeHoleSketch.sketchCurves.sketchCircles
+    circles.addByCenterRadius(createPoint(0, 0, 0), spokeHoleRadius)
+    circles.addByCenterRadius(createPoint(0, 0, 0), nippleHoleRadius)
+    spokeHoleProfile = spokeHoleSketch.profiles.item(0)
+    nippleHoleProfile = spokeHoleSketch.profiles.item(1)
+
+    # Extrude first spoke hole
+    spokeHoleExtrudeInput = extrudes.createInput(spokeHoleProfile, fusion.FeatureOperations.CutFeatureOperation)
+    extentDef = fusion.ThroughAllExtentDefinition.create()
+    extentDir = fusion.ExtentDirections.NegativeExtentDirection
+    spokeHoleExtrudeInput.setOneSideExtent(extentDef, extentDir)
+    spokeHoleExtrudeFeature = extrudes.add(spokeHoleExtrudeInput)
+
+    # Round pattern the spoke hole
+    patterns = newComp.features.circularPatternFeatures
+    collection = core.ObjectCollection.create()
+    collection.add(spokeHoleExtrudeFeature)
+    spokeHolePatternInput = patterns.createInput(collection, revolveAxis)
+    spokeHolePatternInput.quantity = core.ValueInput.createByReal(spokeCount)
+    spokeHolePatternInput.isSymmetric = False
+    spokeHolePatternInput.totalAngle = core.ValueInput.createByReal(2 * pi)
+    spokeHolePatternFeature = patterns.add(spokeHolePatternInput)
+
+    # Enlarge spoke holes in outer rim wall
+    nippleHoleExtrudeInput = extrudes.createInput(nippleHoleProfile, fusion.FeatureOperations.CutFeatureOperation)
+    offsetStart: fusion.OffsetStartDefinition = fusion.OffsetStartDefinition.create(core.ValueInput.createByReal(rimErd / 2))
+    extentDef = fusion.ThroughAllExtentDefinition.create()
+    extentDir = fusion.ExtentDirections.NegativeExtentDirection
+    nippleHoleExtrudeInput.startExtent = offsetStart
+    nippleHoleExtrudeInput.setOneSideExtent(extentDef, extentDir)
+    nippleHoleExtrudeFeature = extrudes.add(nippleHoleExtrudeInput)
+
+    # Round pattern the nipple hole
+    collection = core.ObjectCollection.create()
+    collection.add(nippleHoleExtrudeFeature)
+    nippleHolePatternInput = patterns.createInput(collection, revolveAxis)
+    nippleHolePatternInput.quantity = core.ValueInput.createByReal(spokeCount)
+    nippleHolePatternInput.isSymmetric = False
+    nippleHolePatternInput.totalAngle = core.ValueInput.createByReal(2 * pi)
+    nippleHolePatternFeature = patterns.add(nippleHolePatternInput)
+
+    newComp.isSketchFolderLightBulbOn = False
+    newComp.isConstructionFolderLightBulbOn = False
