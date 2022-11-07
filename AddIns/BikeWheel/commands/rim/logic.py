@@ -99,8 +99,6 @@ class RimLogic():
 
     def __init__(self) -> None:
         self.rim = 'VO Enterprise'
-        self.size = '700c'
-        self.spokes = 32
     
     def CreateCommandInputs(self, inputs: core.CommandInputs):
         global skipValidate
@@ -109,20 +107,17 @@ class RimLogic():
         drop_down_style = core.DropDownStyles.TextListDropDownStyle
         self.rimInput: core.DropDownCommandInput = inputs.addDropDownCommandInput('rim', 'Rim', drop_down_style)
         self.sizeInput: core.DropDownCommandInput = inputs.addDropDownCommandInput('size', 'Size', drop_down_style)
-        self.spokesInput: core.RadioButtonGroupCommandInput = inputs.addRadioButtonGroupCommandInput('spokes', 'Spokes')
-
-        self.spokesInput.listItems.add('24', False)
-        self.spokesInput.listItems.add('28', False)
-        self.spokesInput.listItems.add('32', True)
-        self.spokesInput.listItems.add('36', False)
+        self.spokesInput: core.DropDownCommandInput = inputs.addDropDownCommandInput('spokes', 'Spokes', drop_down_style)
 
         for rimName in rimProfiles.keys():
             self.rimInput.listItems.add(rimName, rimName == self.rim)
         
-        # Set size dropdown to default rim selection on start, replace with others in HandleInputsChanged
-        for size in rimProfiles[self.rimInput.selectedItem.name]['sizes'].keys():
-            self.sizeInput.listItems.add(size, size == list(rimProfiles[self.rimInput.selectedItem.name]['sizes'].keys())[0])
-            
+        rimSizes = rimProfiles[self.rimInput.selectedItem.name]['sizes'].keys()
+        for size in rimSizes:
+            self.sizeInput.listItems.add(size, size == list(rimSizes)[0])
+        spokeCounts = rimProfiles[self.rimInput.selectedItem.name]['spokes']
+        for count in spokeCounts:
+            self.spokesInput.listItems.add(str(count), count == spokeCounts[0])
 
         self.errorMessageTextInput = inputs.addTextBoxCommandInput('errMessage', '', '', 2, True)
         self.errorMessageTextInput.isFullWidth = True
@@ -135,9 +130,13 @@ class RimLogic():
         if not skipValidate:
             if changedInput.id == 'rim':
                 self.sizeInput.listItems.clear()
+                self.spokesInput.listItems.clear()
                 rimSizes = rimProfiles[self.rimInput.selectedItem.name]['sizes'].keys()
                 for size in rimSizes:
                     self.sizeInput.listItems.add(size, size == list(rimSizes)[0])
+                spokeCounts = rimProfiles[self.rimInput.selectedItem.name]['spokes']
+                for count in spokeCounts:
+                    self.spokesInput.listItems.add(str(count), count == spokeCounts[0])
 
     def HandleValidateInputs(self, args: core.ValidateInputsEventArgs):
         pass
@@ -147,7 +146,7 @@ class RimLogic():
         spokeCount = int(self.spokesInput.selectedItem.name)
         createRim(rimProfilePath, self.rimInput.selectedItem.name, self.sizeInput.selectedItem.name, spokeCount)
     
-def createRim(rimProfilePath: str, rim: str, size: float, spokeCount: int):
+def createRim(rimProfilePath: str, rim: str, size: str, spokeCount: int):
     schraederRadius = 0.4
     prestaRadius = 0.3
     spokeHoleRadius = 0.225
