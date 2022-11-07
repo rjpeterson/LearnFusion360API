@@ -15,21 +15,76 @@ if not design:
     alert('You must be in the design workspace to use this command')
 skipValidate = False
 
-# Rim profiles only list points for one half of the rim, The profile must be mirrored and then extruded for a complete rim body
 rimProfiles = {
+    'DT Swiss 545D': {
+        'profile': '/rim_profiles/DT_Swiss_545D.dxf',
+        'sizes': {
+            '26"': 54.2,
+            '700c': 60.5
+        },
+        'spokes': [32, 36]
+    },
+    'Mavic CXP Pro': {
+        'profile': '/rim_profiles/Mavic_CXP_Pro.dxf',
+        'sizes': {
+            '700c': 59.5
+        },
+        'spokes': [28, 32, 36]
+    },
+    'Mavic Open Elite': {
+        'profile': '/rim_profiles/Mavic_Open_Elite.dxf',
+        'sizes': {
+            '700c': 58.1
+        },
+        'spokes': [32, 36]
+    },
+    'Velocity A23': {
+        'profile': '/rim_profiles/Velocity_A23.dxf',
+        'sizes': {
+            '650b': 56.2,
+            '700c': 60.13,
+        },
+        'spokes': [18, 20, 24, 28, 32, 36]
+    },
+    'Velocity Deep V': {
+        'profile': '/rim_profiles/Velocity_Deep_V.dxf',
+        'sizes': {
+            '700c': 58.1
+        },
+        'spokes': [16, 18, 20, 24, 28, 32, 36, 40, 48]
+    },
+    'Velocity Dyad': {
+        'profile': '/rim_profiles/Velocity_Dyad.dxf',
+        'sizes': {
+            '26"': 53.5,
+            '650b': 55.9,
+            '700c': 59.7
+        },
+        'spokes': [28, 32, 36, 40, 48]
+    },
     'VO Enterprise': {
         'profile': '/rim_profiles/VO_Enterprise.dxf',
         'sizes': {
             '700c': 60.52,
-            '27': 61.27
-        }
+            '27"': 61.27
+        },
+        'spokes': [32, 36]
     },
-    'testRim': {
-        'profile': '/rim_profiles/testRim.dxf',
+    'VO Voyager': {
+        'profile': '/rim_profiles/VO_Voyager.dxf',
         'sizes': {
-            '24': 23.0,
-            '650b': 59.2
-        }
+            '26"': 54.17,
+            '650b': 56.5,
+            '700c': 60.14,
+        },
+        'spokes': [32, 36]
+    },
+    'WTB KOM Light 121': {
+        'profile': '/rim_profiles/WTB_KOM_Light_121.dxf',
+        'sizes': {
+            '29"': 60.5,
+        },
+        'spokes': [28, 32]
     }
 }
 
@@ -119,7 +174,7 @@ def createRim(rimProfilePath: str, rim: str, size: float, spokeCount: int):
 
     # Get profile from imported sketch
     rimProfileSketch = sketches.item(0)
-    rimProfile = rimProfileSketch.profiles.item(0)
+    rimProfile = rimProfileSketch.profiles.item(1)
 
     # Draw line to revolve around
     rimErd = rimProfiles[rim]['sizes'][size]
@@ -135,13 +190,13 @@ def createRim(rimProfilePath: str, rim: str, size: float, spokeCount: int):
     rimRevolve = revolves.add(revolveInput)
 
     # Mirror and join revolved body
-    mirrors = newComp.features.mirrorFeatures
-    collection = core.ObjectCollection.create()
-    revolveBody = rimRevolve.bodies.item(0)
-    collection.add(revolveBody)
-    mirrorInput = mirrors.createInput(collection, newComp.yZConstructionPlane)
-    mirrorInput.isCombine = True
-    rimMirror = mirrors.add(mirrorInput)
+    # mirrors = newComp.features.mirrorFeatures
+    # collection = core.ObjectCollection.create()
+    # revolveBody = rimRevolve.bodies.item(0)
+    # collection.add(revolveBody)
+    # mirrorInput = mirrors.createInput(collection, newComp.yZConstructionPlane)
+    # mirrorInput.isCombine = True
+    # rimMirror = mirrors.add(mirrorInput)
 
     # Sketch valve hole profile
     valveHoleSketch = fusion.Sketch.cast(sketches.add(newComp.xYConstructionPlane))
