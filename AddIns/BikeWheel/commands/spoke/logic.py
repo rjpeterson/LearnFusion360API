@@ -1,9 +1,6 @@
 from math import pi
-import os
-import adsk
 import adsk.core as core
 import adsk.fusion as fusion
-from ...lib import fusion360utils as futil
 
 app = core.Application.get()
 if app:

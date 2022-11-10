@@ -1,9 +1,7 @@
 from math import pi
 import os
-import adsk
 import adsk.core as core
 import adsk.fusion as fusion
-from ...lib import fusion360utils as futil
 
 app = core.Application.get()
 if app:
@@ -98,7 +96,7 @@ class RimLogic():
             return ''
 
     def __init__(self) -> None:
-        self.rim = 'VO Enterprise'
+        self.rim = 'DT Swiss 545D'
     
     def CreateCommandInputs(self, inputs: core.CommandInputs):
         global skipValidate
@@ -173,7 +171,14 @@ def createRim(rimProfilePath: str, rim: str, size: str, spokeCount: int):
 
     # Get profile from imported sketch
     rimProfileSketch = sketches.item(0)
-    rimProfile = rimProfileSketch.profiles.item(1)
+    # The profile we want is the one that contains the inner void(s) of the double wall
+    if rimProfileSketch.profiles.count > 1:
+        for profile in rimProfileSketch.profiles:
+            if profile.profileLoops.count > 1:
+                rimProfile = profile
+                break
+    else: # single wall rims only have one profile
+        rimProfile = rimProfileSketch.profiles.item(0)
 
     # Draw line to revolve around
     rimErd = rimProfiles[rim]['sizes'][size]
