@@ -2,11 +2,11 @@
 	"autodeskProduct":	"Fusion360",
 	"type":	"addin",
 	"id":	"c7d4d469-d93d-4b12-906e-14280aa49efb",
-	"author":	"",
+	"author":	"Ryan Peterson",
 	"description":	{
-		"":	""
+		"":	"A Fusion 360 Addin to generate various bicycle component models."
 	},
-	"version":	"",
+	"version":	"0.1.0",
 	"runOnStartup":	false,
 	"supportedOS":	"windows|mac",
 	"editEnabled":	true
