@@ -48,22 +48,83 @@ class HubLogic:
         global skipValidate
         skipValidate = True
 
-        drop_down_style = core.DropDownStyles.TextListDropDownStyle
-        self.rimInput: core.DropDownCommandInput = inputs.addDropDownCommandInput('rim', 'Rim', drop_down_style)
-        self.sizeInput: core.DropDownCommandInput = inputs.addDropDownCommandInput('size', 'Size', drop_down_style)
-        self.spokesInput: core.DropDownCommandInput = inputs.addDropDownCommandInput('spokes', 'Spokes', drop_down_style)
+        self.presetInput = inputs.addDropDownCommandInput(
+            "preset", "Preset", core.DropDownStyles.TextListDropDownStyle
+        )
+        self.presetInput.listItems.add("None", True)
+        self.presetInput.listItems.add("Shimano Deore XT FH-M8110-B 148mm Rear", False)
+        self.presetInput.listItems.add("White Industries Track Rear non-f/f", False)
 
-        for rimName in rimProfiles.keys():
-            self.rimInput.listItems.add(rimName, rimName == self.rim)
-        
-        rimSizes = rimProfiles[self.rimInput.selectedItem.name]['sizes'].keys()
-        for size in rimSizes:
-            self.sizeInput.listItems.add(size, size == list(rimSizes)[0])
-        spokeCounts = rimProfiles[self.rimInput.selectedItem.name]['spokes']
-        for count in spokeCounts:
-            self.spokesInput.listItems.add(str(count), count == spokeCounts[0])
+        self.hubTypeInput = inputs.addRadioButtonGroupCommandInput(
+            "hubType", "Hub Type"
+        )
+        self.frontOption: core.ListItem = self.hubTypeInput.listItems.add("Front", True)
+        self.rearOption: core.ListItem = self.hubTypeInput.listItems.add("Rear", False)
 
-        self.errorMessageTextInput = inputs.addTextBoxCommandInput('errMessage', '', '', 2, True)
+        self.brakeTypeInput = inputs.addRadioButtonGroupCommandInput(
+            "brakeType", "Brake Type"
+        )
+        self.rimOption: core.ListItem = self.brakeTypeInput.listItems.add("Rim", True)
+        self.sixBoltOption: core.ListItem = self.brakeTypeInput.listItems.add(
+            "Disc 6-bolt", False
+        )
+        self.centerLockOption: core.ListItem = self.brakeTypeInput.listItems.add(
+            "Disc CenterLock", False
+        )
+
+        self.axleTypeInput = inputs.addRadioButtonGroupCommandInput(
+            "axleType", "Axle Type"
+        )
+        self.qrOption: core.ListItem = self.axleTypeInput.listItems.add(
+            "QR", True
+        )  # Front 9mm Rear 10mm
+        self.thruMTBOption: core.ListItem = self.axleTypeInput.listItems.add(
+            "Thru MTB", False
+        )  # Front 15mm Rear 12mm
+        self.thruRoadOption: core.ListItem = self.axleTypeInput.listItems.add(
+            "Thru Road", False
+        )  # Front 12mm Rear 12mm
+        self.solidOption: core.ListItem = self.axleTypeInput.listItems.add(
+            "Solid", False
+        )
+
+        self.oldInput = inputs.addValueInput(
+            "old",
+            "Over Locknut Distance",
+            "mm",
+            core.ValueInput.createByString("100 mm"),
+        )
+        self.leftFlangeDiaInput = inputs.addValueInput(
+            "leftFlangeDia",
+            "Left Flange Diameter",
+            "mm",
+            core.ValueInput.createByString("62 mm"),
+        )
+        self.rightFlangeDiaInput = inputs.addValueInput(
+            "rightFlangeDia",
+            "Right Flange Diameter",
+            "mm",
+            core.ValueInput.createByString("62 mm"),
+        )
+        self.centerToLeftFlangeInput = inputs.addValueInput(
+            "centerToLeftFlange",
+            "Center to Left Flange",
+            "mm",
+            core.ValueInput.createByString("33.3 mm"),
+        )
+        self.centerToRightFlangeInput = inputs.addValueInput(
+            "centerToRightFlange",
+            "Center to Right Flange",
+            "mm",
+            core.ValueInput.createByString("33.3 mm"),
+        )
+        self.spokesInput = inputs.addIntegerSpinnerCommandInput(
+            "spokes", "Spokes", 2, 48, 2, 32
+        )
+
+        self.errorMessageTextInput = inputs.addTextBoxCommandInput(
+            "errMessage", "", "", 2, True
+        )
         self.errorMessageTextInput.isFullWidth = True
 
         skipValidate = False
