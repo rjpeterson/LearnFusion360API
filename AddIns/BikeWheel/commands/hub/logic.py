@@ -446,48 +446,68 @@ def createHub(logic: HubLogic):
         freehubRevolve = revolves.add(freehubRevolveInput)
         freehubRevolve.bodies.item(0).name = "Freehub"
 
-    # Create sketch for spoke hole cut
-    spokeHoleSketch = fusion.Sketch.cast(sketches.add(spokeHolePlane))
-    circles = spokeHoleSketch.sketchCurves.sketchCircles
-    circles.addByCenterRadius(createPoint(0, 0, 0), spokeHoleRadius)
-    circles.addByCenterRadius(createPoint(0, 0, 0), nippleHoleRadius)
-    spokeHoleProfile = spokeHoleSketch.profiles.item(0)
-    nippleHoleProfile = spokeHoleSketch.profiles.item(1)
+    if logic.brakeType == "Disc 6-bolt":  # 44 bcd
+        circleRad = 2.2
+        boltRad = 0.25
 
-    # Extrude first spoke hole
-    spokeHoleExtrudeInput = extrudes.createInput(spokeHoleProfile, fusion.FeatureOperations.CutFeatureOperation)
-    extentDef = fusion.ThroughAllExtentDefinition.create()
-    extentDir = fusion.ExtentDirections.NegativeExtentDirection
-    spokeHoleExtrudeInput.setOneSideExtent(extentDef, extentDir)
-    spokeHoleExtrudeFeature = extrudes.add(spokeHoleExtrudeInput)
+        # sketch boss circle
+        bossSketch = fusion.Sketch.cast(sketches.add(newComp.yZConstructionPlane))
+        circles = bossSketch.sketchCurves.sketchCircles
+        circles.addByCenterRadius(_origin, circleRad + boltRad * 2)
+        circles.addByCenterRadius(_origin, hardwareRad + 0.3)
+        for profile in bossSketch.profiles:
+            if profile.profileLoops.count == 2:
+                bossProfile = profile
+                break
 
-    # Round pattern the spoke hole
-    patterns = newComp.features.circularPatternFeatures
-    collection = core.ObjectCollection.create()
-    collection.add(spokeHoleExtrudeFeature)
-    spokeHolePatternInput = patterns.createInput(collection, revolveAxis)
-    spokeHolePatternInput.quantity = core.ValueInput.createByReal(spokeCount)
-    spokeHolePatternInput.isSymmetric = False
-    spokeHolePatternInput.totalAngle = core.ValueInput.createByReal(2 * pi)
-    spokeHolePatternFeature = patterns.add(spokeHolePatternInput)
+        # extrude boss
+        bossExtrudeInput = extrudes.createInput(
+            bossProfile, fusion.FeatureOperations.NewBodyFeatureOperation
+        )
+        offsetStart: fusion.OffsetStartDefinition = fusion.OffsetStartDefinition.create(
+            core.ValueInput.createByReal(-logic.centerToLeftFlange)
+        )
+        if logic.hubType == "Rear":
+            extent = (logic.old / 2) - logic.centerToLeftFlange - _locknutToRotorRear
+        else:
+            extent = (logic.old / 2) - logic.centerToLeftFlange - _locknutToRotorFront
+        extentDef: fusion.DistanceExtentDefinition = (
+            fusion.DistanceExtentDefinition.create(core.ValueInput.createByReal(extent))
+        )
+        extentDir = fusion.ExtentDirections.NegativeExtentDirection
+        bossExtrudeInput.startExtent = offsetStart
+        bossExtrudeInput.setOneSideExtent(extentDef, extentDir)
+        bossExtrude = extrudes.add(bossExtrudeInput)
+        bossBody = bossExtrude.bodies.item(0)
+        bossBody.name = "Brake Boss"
 
-    # Enlarge spoke holes in outer rim wall
-    nippleHoleExtrudeInput = extrudes.createInput(nippleHoleProfile, fusion.FeatureOperations.CutFeatureOperation)
-    offsetStart: fusion.OffsetStartDefinition = fusion.OffsetStartDefinition.create(core.ValueInput.createByReal(rimErd / 2))
-    extentDef = fusion.ThroughAllExtentDefinition.create()
-    extentDir = fusion.ExtentDirections.NegativeExtentDirection
-    nippleHoleExtrudeInput.startExtent = offsetStart
-    nippleHoleExtrudeInput.setOneSideExtent(extentDef, extentDir)
-    nippleHoleExtrudeFeature = extrudes.add(nippleHoleExtrudeInput)
+        # sketch brake boss hole to pattern
+        boltHoleSketchPlaneInput = fusion.ConstructionPlaneInput.cast(newComp.constructionPlanes.createInput())
+        boltHoleSketchPlaneInput.setByOffset(bossExtrude.endFaces.item(0), core.ValueInput.createByReal(0))
+        boltHoleSketchPlane = newComp.constructionPlanes.add(boltHoleSketchPlaneInput)
+        boltHoleSketch = fusion.Sketch.cast(sketches.add(boltHoleSketchPlane)) #TODO using boss face as plane creates more profiles in the sketch, create and use a construction plane instead
+        boltHoleSketch.name = "Brake Bolt Hole"
+        circles = boltHoleSketch.sketchCurves.sketchCircles
+        circles.addByCenterRadius(createPoint(0, circleRad, 0), boltRad)
+        boltHoleProfile = boltHoleSketch.profiles.item(0)
 
-    # Round pattern the nipple hole
-    collection = core.ObjectCollection.create()
-    collection.add(nippleHoleExtrudeFeature)
-    nippleHolePatternInput = patterns.createInput(collection, revolveAxis)
-    nippleHolePatternInput.quantity = core.ValueInput.createByReal(spokeCount)
-    nippleHolePatternInput.isSymmetric = False
-    nippleHolePatternInput.totalAngle = core.ValueInput.createByReal(2 * pi)
-    nippleHolePatternFeature = patterns.add(nippleHolePatternInput)
+        # cut bolt hole
+        # boltHoleExtrudeInput = extrudes.createInput(boltHoleProfile, fusion.FeatureOperations.CutFeatureOperation)
+        boltHoleExtrude = extrudes.addSimple(
+            boltHoleProfile,
+            core.ValueInput.createByReal(-0.5),
+            fusion.FeatureOperations.CutFeatureOperation,
+        )
 
-    newComp.isSketchFolderLightBulbOn = False
-    newComp.isConstructionFolderLightBulbOn = False
+        # pattern bolt hole
+        collection = core.ObjectCollection.create()
+        collection.add(boltHoleExtrude)
+        boltHolePatternInput = patterns.createInput(
+            collection, newComp.xConstructionAxis
+        )
+        boltHolePatternInput.isSymmetric = False
+        boltHolePatternInput.quantity = core.ValueInput.createByReal(6)
+        boltHolePatternInput.totalAngle = core.ValueInput.createByReal(2 * pi)
+        patterns.add(boltHolePatternInput)
+
+    # chamfers & fillets
