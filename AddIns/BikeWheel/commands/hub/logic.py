@@ -212,15 +212,18 @@ class HubLogic:
                 args.areInputsValid = True
 
     def HandleExecute(self, args: core.CommandEventArgs):
-        rimProfilePath = f'{self.resource_dir}{rimProfiles[self.rimInput.selectedItem.name]["profile"]}'
-        spokeCount = int(self.spokesInput.selectedItem.name)
-        createRim(rimProfilePath, self.rimInput.selectedItem.name, self.sizeInput.selectedItem.name, spokeCount)
-    
-def createRim(rimProfilePath: str, rim: str, size: str, spokeCount: int):
-    schraederRadius = 0.4
-    prestaRadius = 0.3
-    spokeHoleRadius = 0.225
-    nippleHoleRadius = 0.3
+        self.preset = self.presetInput.selectedItem.name
+        self.old = self.oldInput.value
+        self.spokes = self.spokesInput.value
+        self.brakeType = self.brakeTypeInput.selectedItem.name
+        self.hubType = self.hubTypeInput.selectedItem.name
+        self.axleType = self.axleTypeInput.selectedItem.name
+        self.leftFlangeDia = self.leftFlangeDiaInput.value
+        self.rightFlangeDia = self.rightFlangeDiaInput.value
+        self.centerToLeftFlange = self.centerToLeftFlangeInput.value
+        self.centerToRightFlange = self.centerToRightFlangeInput.value
+        createHub(self)
+
 
     importManager = app.importManager
     rootComp = design.rootComponent
