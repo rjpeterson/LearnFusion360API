@@ -367,10 +367,26 @@ def createHub(logic: HubLogic):
     flangeRotateInput = moves.createInput(collection, transform)
     moves.add(flangeRotateInput)
 
+    # sketch axle hardware
+    axleHardwareSketch = fusion.Sketch.cast(sketches.add(newComp.xZConstructionPlane))
+    lines = axleHardwareSketch.sketchCurves.sketchLines
+    hardwareRad = 0.75
+    lines.addTwoPointRectangle(
+        createPoint(-logic.old / 2, axleRad + 0.05, 0),
+        createPoint(logic.old / 2, hardwareRad, 0),
+    )
+    axleHardwareProfile = axleHardwareSketch.profiles.item(0)
+
+    # revolve axle hardware
     revolves = newComp.features.revolveFeatures
-    revolveInput = revolves.createInput(rimProfile, revolveAxis, fusion.FeatureOperations.NewBodyFeatureOperation)
-    revolveInput.setAngleExtent(False, core.ValueInput.createByReal(2 * pi))
-    rimRevolve = revolves.add(revolveInput)
+    hardwareRevolveInput = revolves.createInput(
+        axleHardwareProfile,
+        newComp.xConstructionAxis,
+        fusion.FeatureOperations.NewBodyFeatureOperation,
+    )
+    hardwareRevolveInput.setAngleExtent(False, core.ValueInput.createByReal(2 * pi))
+    axleHardwareRevolve = revolves.add(hardwareRevolveInput)
+    axleHardwareRevolve.bodies.item(0).name = "Axle Hardware"
 
     # Mirror and join revolved body
     # mirrors = newComp.features.mirrorFeatures
