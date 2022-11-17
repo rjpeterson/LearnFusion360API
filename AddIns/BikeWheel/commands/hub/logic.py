@@ -157,6 +157,21 @@ class HubLogic:
                     self.rightFlangeDiaInput.value = 7.3
                     self.centerToLeftFlangeInput.value = 3.55
                     self.centerToRightFlangeInput.value = 3.0
+            elif changedInput.id == "hubType" or changedInput.id == "axleType":
+                if self.hubTypeInput == "Front":
+                    if self.axleTypeInput == "QR":
+                        self.axleDia = 0.9
+                    elif self.axleTypeInput == "Thru MTB":
+                        self.axleDia = 1.5
+                    elif self.axleTypeInput == "Thru Road":
+                        self.axleDia = 1.2
+                    else:  # "Solid"
+                        self.axleDia = 0.9
+                else:  # "Rear"
+                    if self.axleTypeInput == "QR" or self.axleTypeInput == "Solid":
+                        self.axleDia = 1.0
+                    else:  # "Thru"
+                        self.axleDia = 1.2
 
     def HandleValidateInputs(self, args: core.ValidateInputsEventArgs):
         pass
