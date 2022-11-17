@@ -1,9 +1,8 @@
-from math import pi
 import os
-import adsk
+from math import pi
+
 import adsk.core as core
 import adsk.fusion as fusion
-from ...lib import fusion360utils as futil
 
 app = core.Application.get()
 if app:
@@ -12,81 +11,13 @@ if app:
     alert = ui.messageBox
 design = fusion.Design.cast(app.activeProduct)
 if not design:
-    alert('You must be in the design workspace to use this command')
+    alert("You must be in the design workspace to use this command")
 skipValidate = False
 
-rimProfiles = {
-    'DT Swiss 545D': {
-        'profile': '/rim_profiles/DT_Swiss_545D.dxf',
-        'sizes': {
-            '26"': 54.2,
-            '700c': 60.5
-        },
-        'spokes': [32, 36]
-    },
-    'Mavic CXP Pro': {
-        'profile': '/rim_profiles/Mavic_CXP_Pro.dxf',
-        'sizes': {
-            '700c': 59.5
-        },
-        'spokes': [28, 32, 36]
-    },
-    'Mavic Open Elite': {
-        'profile': '/rim_profiles/Mavic_Open_Elite.dxf',
-        'sizes': {
-            '700c': 58.1
-        },
-        'spokes': [32, 36]
-    },
-    'Velocity A23': {
-        'profile': '/rim_profiles/Velocity_A23.dxf',
-        'sizes': {
-            '650b': 56.2,
-            '700c': 60.13,
-        },
-        'spokes': [18, 20, 24, 28, 32, 36]
-    },
-    'Velocity Deep V': {
-        'profile': '/rim_profiles/Velocity_Deep_V.dxf',
-        'sizes': {
-            '700c': 58.1
-        },
-        'spokes': [16, 18, 20, 24, 28, 32, 36, 40, 48]
-    },
-    'Velocity Dyad': {
-        'profile': '/rim_profiles/Velocity_Dyad.dxf',
-        'sizes': {
-            '26"': 53.5,
-            '650b': 55.9,
-            '700c': 59.7
-        },
-        'spokes': [28, 32, 36, 40, 48]
-    },
-    'VO Enterprise': {
-        'profile': '/rim_profiles/VO_Enterprise.dxf',
-        'sizes': {
-            '700c': 60.52,
-            '27"': 61.27
-        },
-        'spokes': [32, 36]
-    },
-    'VO Voyager': {
-        'profile': '/rim_profiles/VO_Voyager.dxf',
-        'sizes': {
-            '26"': 54.17,
-            '650b': 56.5,
-            '700c': 60.14,
-        },
-        'spokes': [32, 36]
-    },
-    'WTB KOM Light 121': {
-        'profile': '/rim_profiles/WTB_KOM_Light_121.dxf',
-        'sizes': {
-            '29"': 60.5,
-        },
-        'spokes': [28, 32]
-    }
-}
+hubData = {}
+_origin = createPoint(0, 0, 0)
+_locknutToRotorFront = 0.99
+_locknutToRotorRear = 1.45
 
 class RimLogic():
     @property
