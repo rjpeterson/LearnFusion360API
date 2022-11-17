@@ -19,18 +19,31 @@ _origin = createPoint(0, 0, 0)
 _locknutToRotorFront = 0.99
 _locknutToRotorRear = 1.45
 
-class RimLogic():
+
+class HubLogic:
     @property
     def resource_dir(self):
         try:
-            _resource_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resources')
-            return _resource_dir if os.path.isdir(_resource_dir) else ''
+            _resource_dir = os.path.join(
+                os.path.dirname(os.path.realpath(__file__)), "resources"
+            )
+            return _resource_dir if os.path.isdir(_resource_dir) else ""
         except:
-            return ''
+            return ""
 
     def __init__(self) -> None:
-        self.rim = 'DT Swiss 545D'
-    
+        self.preset = "None"
+        self.hubType = "Front"
+        self.brakeType = "Rim"
+        self.axleType = "QR"
+        self.axleDia = 0.9
+        self.old = 10.0
+        self.leftFlangeDia = 6.2
+        self.rightFlangeDia = 6.2
+        self.centerToLeftFlange = 3.33
+        self.centerToRightFlange = 3.33
+        self.spokes = 32
+
     def CreateCommandInputs(self, inputs: core.CommandInputs):
         global skipValidate
         skipValidate = True
