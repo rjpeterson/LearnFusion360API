@@ -225,16 +225,26 @@ class HubLogic:
         createHub(self)
 
 
-    importManager = app.importManager
+def createHub(logic: HubLogic):
+    leftFlangeRad = logic.leftFlangeDia / 2
+    rightFlangeRad = logic.rightFlangeDia / 2
+    axleRad = logic.axleDia / 2
+    if logic.axleType == "Solid":
+        axleExtent = logic.old + 3
+    else:
+        axleExtent = logic.old + 0.4
+
+    # importManager = app.importManager
     rootComp = design.rootComponent
     # Create a new component by creating an occurrence.
     occurence = rootComp.occurrences.addNewComponent(core.Matrix3D.create())
     newComp = occurence.component
-    newComp.name = f'Rim {rim} x {size} x {spokeCount}'
+    if logic.preset != "None":
+        newComp.name = logic.preset
+    else:
+        newComp.name = f"{logic.hubType} {logic.axleType} {logic.old}  x {logic.spokes}"
 
-    # Get dxf import options
-    dxfOptions = importManager.createDXF2DImportOptions(rimProfilePath, newComp.xYConstructionPlane)
-    dxfOptions.isViewFit = False
+    sketches = newComp.sketches
 
     # Set the flag true to merge all the layers of DXF into single sketch.
     dxfOptions.isSingleSketchResult = True
