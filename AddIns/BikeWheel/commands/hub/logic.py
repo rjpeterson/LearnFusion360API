@@ -388,21 +388,39 @@ def createHub(logic: HubLogic):
     axleHardwareRevolve = revolves.add(hardwareRevolveInput)
     axleHardwareRevolve.bodies.item(0).name = "Axle Hardware"
 
-    # Mirror and join revolved body
-    # mirrors = newComp.features.mirrorFeatures
-    # collection = core.ObjectCollection.create()
-    # revolveBody = rimRevolve.bodies.item(0)
-    # collection.add(revolveBody)
-    # mirrorInput = mirrors.createInput(collection, newComp.yZConstructionPlane)
-    # mirrorInput.isCombine = True
-    # rimMirror = mirrors.add(mirrorInput)
+    # sketch hub body
+    hubBodySketch = fusion.Sketch.cast(sketches.add(newComp.xZConstructionPlane))
+    lines = hubBodySketch.sketchCurves.sketchLines
+    leftBodyRad = (leftFlangeRad + hardwareRad) / 2.2
+    rightBodyRad = (rightFlangeRad + hardwareRad) / 2.2
+    point1 = createPoint((-logic.old / 2) + 0.5, 0, 0)
+    point2 = createPoint((-logic.old / 2) + 0.5, leftBodyRad, 0)
+    point3 = createPoint(-logic.centerToLeftFlange, leftBodyRad, 0)
+    point4 = createPoint(logic.centerToRightFlange, rightBodyRad, 0)
+    if logic.hubType == "Front":
+        point5 = createPoint((logic.old / 2) - 0.5, leftBodyRad, 0)
+        point6 = createPoint((logic.old / 2) - 0.5, 0, 0)
+    else:
+        point5 = createPoint(logic.centerToRightFlange + 0.2, rightBodyRad, 0)
+        point6 = createPoint(logic.centerToRightFlange + 0.2, 0, 0)
+    lines.addByTwoPoints(point1, point2)
+    lines.addByTwoPoints(point2, point3)
+    lines.addByTwoPoints(point3, point4)
+    lines.addByTwoPoints(point4, point5)
+    lines.addByTwoPoints(point5, point6)
+    lines.addByTwoPoints(point6, point1)
+    #
+    bodyProfile = hubBodySketch.profiles.item(0)
 
-    # Sketch valve hole profile
-    valveHoleSketch = fusion.Sketch.cast(sketches.add(newComp.xYConstructionPlane))
-    valveHoleSketch.name = 'Valve Hole'
-    circles = valveHoleSketch.sketchCurves.sketchCircles
-    circles.addByCenterRadius(createPoint(0, rimErd / 2, 0), schraederRadius)
-    valveHoleProfile = valveHoleSketch.profiles.item(0)
+    # revolve hub body
+    bodyRevolveInput = revolves.createInput(
+        bodyProfile,
+        newComp.xConstructionAxis,
+        fusion.FeatureOperations.NewBodyFeatureOperation,
+    )
+    bodyRevolveInput.setAngleExtent(False, core.ValueInput.createByReal(2 * pi))
+    bodyRevolve = revolves.add(bodyRevolveInput)
+    bodyRevolve.bodies.item(0).name = "Hub Body"
 
     # Cut valve hole in rim
     extrudes = newComp.features.extrudeFeatures
