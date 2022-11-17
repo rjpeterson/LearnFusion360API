@@ -311,7 +311,62 @@ def createHub(logic: HubLogic):
     rFlangeBody = rFlangeExtrude.bodies.item(0)
     rFlangeBody.name = "Right Flange"
 
-    # Revolve rim profile around axis
+    # cut single spoke hole TODO add left and right difference flange diameters
+    leftSpokeHoleSketch = fusion.Sketch.cast(sketches.add(newComp.yZConstructionPlane))
+    circles = leftSpokeHoleSketch.sketchCurves.sketchCircles
+    circles.addByCenterRadius(createPoint(0, leftFlangeRad, 0), 0.125)
+    leftSpokeHoleProfile = leftSpokeHoleSketch.profiles.item(0)
+    leftSpokeHoleExtrudeInput = extrudes.createInput(
+        leftSpokeHoleProfile, fusion.FeatureOperations.CutFeatureOperation
+    )
+    extent = fusion.DistanceExtentDefinition.create(
+        core.ValueInput.createByReal(logic.centerToLeftFlange + 1)
+    )
+    leftSpokeHoleExtrudeInput.setOneSideExtent(
+        extent, fusion.ExtentDirections.NegativeExtentDirection
+    )
+    leftSpokeHoleCut = extrudes.add(leftSpokeHoleExtrudeInput)
+
+    rightSpokeHoleSketch = fusion.Sketch.cast(sketches.add(newComp.yZConstructionPlane))
+    circles = rightSpokeHoleSketch.sketchCurves.sketchCircles
+    circles.addByCenterRadius(createPoint(0, rightFlangeRad, 0), 0.125)
+    rightSpokeHoleProfile = rightSpokeHoleSketch.profiles.item(0)
+    rightSpokeHoleExtrudeInput = extrudes.createInput(
+        rightSpokeHoleProfile, fusion.FeatureOperations.CutFeatureOperation
+    )
+    extent = fusion.DistanceExtentDefinition.create(
+        core.ValueInput.createByReal(logic.centerToRightFlange + 1)
+    )
+    rightSpokeHoleExtrudeInput.setOneSideExtent(
+        extent, fusion.ExtentDirections.PositiveExtentDirection
+    )
+    rightSpokeHoleCut = extrudes.add(rightSpokeHoleExtrudeInput)
+
+    # circular pattern spoke hole
+    # TODO figure out why this breaks every other run
+    patterns = newComp.features.circularPatternFeatures
+    collection = core.ObjectCollection.create()
+    collection.add(leftSpokeHoleCut)
+    collection.add(rightSpokeHoleCut)
+    spokeHolePatternInput = patterns.createInput(collection, newComp.xConstructionAxis)
+    spokeHolePatternInput.isSymmetric = False
+    spokeHolePatternInput.quantity = core.ValueInput.createByReal(logic.spokes / 2)
+    spokeHolePatternInput.totalAngle = core.ValueInput.createByReal(2 * pi)
+    spokeHolePattern = patterns.add(spokeHolePatternInput)
+
+    # offest one flange body
+    moves = newComp.features.moveFeatures
+    collection = core.ObjectCollection.create()
+    collection.add(rFlangeBody)
+    transform = core.Matrix3D.create()
+    transform.setToRotation(
+        (2 * pi) / logic.spokes,
+        newComp.xConstructionAxis.geometry.direction,
+        _origin,
+    )
+    flangeRotateInput = moves.createInput(collection, transform)
+    moves.add(flangeRotateInput)
+
     revolves = newComp.features.revolveFeatures
     revolveInput = revolves.createInput(rimProfile, revolveAxis, fusion.FeatureOperations.NewBodyFeatureOperation)
     revolveInput.setAngleExtent(False, core.ValueInput.createByReal(2 * pi))
