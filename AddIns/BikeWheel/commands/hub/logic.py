@@ -422,20 +422,29 @@ def createHub(logic: HubLogic):
     bodyRevolve = revolves.add(bodyRevolveInput)
     bodyRevolve.bodies.item(0).name = "Hub Body"
 
-    # Cut valve hole in rim
-    extrudes = newComp.features.extrudeFeatures
-    extrudeInput = extrudes.createInput(valveHoleProfile, fusion.FeatureOperations.CutFeatureOperation)
-    extentDef = fusion.ThroughAllExtentDefinition.create()
-    extendDir = fusion.ExtentDirections.NegativeExtentDirection
-    extrudeInput.setOneSideExtent(extentDef, extendDir)
-    extrudes.add(extrudeInput)
+    # if rear
+    if logic.hubType == "Rear":
+        # sketch freehub
+        freehubSketch = fusion.Sketch.cast(sketches.add(newComp.xZConstructionPlane))
+        lines = freehubSketch.sketchCurves.sketchLines
+        freehubRad = 1.7
+        freehubStart = logic.centerToRightFlange + 0.2
+        freehubEnd = (logic.old / 2) - 1
+        lines.addTwoPointRectangle(
+            createPoint(freehubStart, hardwareRad + 0.3, 0),
+            createPoint(freehubEnd, freehubRad, 0),
+        )
+        freehubProfile = freehubSketch.profiles.item(0)
 
-    # Cut spoke holes in rim
-    # Create angled plane for first extrude cut
-    constructionPlanes = newComp.constructionPlanes
-    spokeHolePlaneInput: fusion.ConstructionPlaneInput = constructionPlanes.createInput()
-    spokeHolePlaneInput.setByAngle(revolveAxis, core.ValueInput.createByReal(2 * pi / spokeCount / 2), newComp.xYConstructionPlane)
-    spokeHolePlane = constructionPlanes.add(spokeHolePlaneInput)
+        # revolve freehub
+        freehubRevolveInput = revolves.createInput(
+            freehubProfile,
+            newComp.xConstructionAxis,
+            fusion.FeatureOperations.NewBodyFeatureOperation,
+        )
+        freehubRevolveInput.setAngleExtent(False, core.ValueInput.createByReal(2 * pi))
+        freehubRevolve = revolves.add(freehubRevolveInput)
+        freehubRevolve.bodies.item(0).name = "Freehub"
 
     # Create sketch for spoke hole cut
     spokeHoleSketch = fusion.Sketch.cast(sketches.add(spokeHolePlane))
