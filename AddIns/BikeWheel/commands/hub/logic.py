@@ -267,25 +267,49 @@ def createHub(logic: HubLogic):
     axleExtrude = extrudes.add(axleExtrudeInput)
     axleExtrude.bodies.item(0).name = "Axle"
 
-    sketches = newComp.sketches
+    # sketch flanges
+    leftFlangeSketch = fusion.Sketch.cast(sketches.add(newComp.yZConstructionPlane))
+    circles = leftFlangeSketch.sketchCurves.sketchCircles
+    circles.addByCenterRadius(_origin, leftFlangeRad + 0.3)
+    leftFlangeProfile = leftFlangeSketch.profiles.item(0)
+    rightFlangeSketch = fusion.Sketch.cast(sketches.add(newComp.yZConstructionPlane))
+    circles = rightFlangeSketch.sketchCurves.sketchCircles
+    circles.addByCenterRadius(_origin, rightFlangeRad + 0.3)
+    rightFlangeProfile = rightFlangeSketch.profiles.item(0)
 
-    # Get profile from imported sketch
-    rimProfileSketch = sketches.item(0)
-    # The profile we want is the one that contains the inner void(s) of the double wall
-    if rimProfileSketch.profiles.count > 1:
-        for profile in rimProfileSketch.profiles:
-            if profile.profileLoops.count > 1:
-                rimProfile = profile
-                break
-    else: # single wall rims only have one profile
-        rimProfile = rimProfileSketch.profiles.item(0)
+    # API doesnt support sketch patterns, so we have to extrude flanges first, extrude a spoke hole, and then pattern the feature
+    # extrude flanges
+    lFlangeExtrudeInput = extrudes.createInput(
+        leftFlangeProfile, fusion.FeatureOperations.NewBodyFeatureOperation
+    )
+    offsetStart: fusion.OffsetStartDefinition = fusion.OffsetStartDefinition.create(
+        core.ValueInput.createByReal(-logic.centerToLeftFlange + 0.1)
+    )
+    extentDef: fusion.DistanceExtentDefinition = fusion.DistanceExtentDefinition.create(
+        core.ValueInput.createByReal(0.2)
+    )
+    extentDir = fusion.ExtentDirections.NegativeExtentDirection
+    lFlangeExtrudeInput.startExtent = offsetStart
+    lFlangeExtrudeInput.setOneSideExtent(extentDef, extentDir)
+    lFlangeExtrude = extrudes.add(lFlangeExtrudeInput)
+    lFlangeBody = lFlangeExtrude.bodies.item(0)
+    lFlangeBody.name = "Left Flange"
 
-    # Draw line to revolve around
-    rimErd = rimProfiles[rim]['sizes'][size]
-    revolveAxisSketch = fusion.Sketch.cast(sketches.add(newComp.xYConstructionPlane))
-    revolveAxisSketch.name = 'Revolve Axis'
-    lines = revolveAxisSketch.sketchCurves.sketchLines
-    revolveAxis = lines.addByTwoPoints(createPoint(-1, rimErd / 2, 0), createPoint(1, rimErd / 2, 0))
+    rFlangeExtrudeInput = extrudes.createInput(
+        rightFlangeProfile, fusion.FeatureOperations.NewBodyFeatureOperation
+    )
+    offsetStart: fusion.OffsetStartDefinition = fusion.OffsetStartDefinition.create(
+        core.ValueInput.createByReal(logic.centerToRightFlange - 0.1)
+    )
+    extentDef: fusion.DistanceExtentDefinition = fusion.DistanceExtentDefinition.create(
+        core.ValueInput.createByReal(0.2)
+    )
+    extentDir = fusion.ExtentDirections.PositiveExtentDirection
+    rFlangeExtrudeInput.startExtent = offsetStart
+    rFlangeExtrudeInput.setOneSideExtent(extentDef, extentDir)
+    rFlangeExtrude = extrudes.add(rFlangeExtrudeInput)
+    rFlangeBody = rFlangeExtrude.bodies.item(0)
+    rFlangeBody.name = "Right Flange"
 
     # Revolve rim profile around axis
     revolves = newComp.features.revolveFeatures
