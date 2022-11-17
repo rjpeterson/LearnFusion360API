@@ -246,11 +246,26 @@ def createHub(logic: HubLogic):
 
     sketches = newComp.sketches
 
-    # Set the flag true to merge all the layers of DXF into single sketch.
-    dxfOptions.isSingleSketchResult = True
+    # sketch axle
+    axleSketch = fusion.Sketch.cast(sketches.add(newComp.yZConstructionPlane))
+    circles = axleSketch.sketchCurves.sketchCircles
+    circles.addByCenterRadius(_origin, axleRad)
+    circles.addByCenterRadius(_origin, axleRad - 0.2)
 
-    # Import dxf file to root component
-    importManager.importToTarget(dxfOptions, newComp)
+    # extrude axle
+    extrudes = newComp.features.extrudeFeatures
+    collection = core.ObjectCollection.create()
+    for profile in axleSketch.profiles:
+        if logic.axleType == "Solid":
+            collection.add(profile)
+        elif profile.profileLoops.count == 2:
+            collection.add(profile)
+    axleExtrudeInput = extrudes.createInput(
+        collection, fusion.FeatureOperations.NewBodyFeatureOperation
+    )
+    axleExtrudeInput.setSymmetricExtent(core.ValueInput.createByReal(axleExtent), True)
+    axleExtrude = extrudes.add(axleExtrudeInput)
+    axleExtrude.bodies.item(0).name = "Axle"
 
     sketches = newComp.sketches
 
