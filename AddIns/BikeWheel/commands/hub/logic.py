@@ -131,17 +131,32 @@ class HubLogic:
 
     def HandleInputsChanged(self, args: core.InputChangedEventArgs):
         changedInput = args.input
-        
         if not skipValidate:
-            if changedInput.id == 'rim':
-                self.sizeInput.listItems.clear()
-                self.spokesInput.listItems.clear()
-                rimSizes = rimProfiles[self.rimInput.selectedItem.name]['sizes'].keys()
-                for size in rimSizes:
-                    self.sizeInput.listItems.add(size, size == list(rimSizes)[0])
-                spokeCounts = rimProfiles[self.rimInput.selectedItem.name]['spokes']
-                for count in spokeCounts:
-                    self.spokesInput.listItems.add(str(count), count == spokeCounts[0])
+            if changedInput.id == "preset":
+                if (
+                    self.presetInput.selectedItem.name
+                    == "Shimano Deore XT FH-M8110-B 148mm Rear"
+                ):
+                    self.rearOption.isSelected = True
+                    self.centerLockOption.isSelected = True
+                    self.thruMTBOption.isSelected = True
+                    self.oldInput.value = 14.8
+                    self.leftFlangeDiaInput.value = 6.0
+                    self.rightFlangeDiaInput.value = 6.1
+                    self.centerToLeftFlangeInput.value = 3.6
+                    self.centerToRightFlangeInput.value = 2.2
+                if (
+                    self.presetInput.selectedItem.name
+                    == "White Industries Track Rear non-f/f"
+                ):
+                    self.rearOption.isSelected = True
+                    self.rimOption.isSelected = True
+                    self.solidOption.isSelected = True
+                    self.oldInput.value = 12.0
+                    self.leftFlangeDiaInput.value = 7.3
+                    self.rightFlangeDiaInput.value = 7.3
+                    self.centerToLeftFlangeInput.value = 3.55
+                    self.centerToRightFlangeInput.value = 3.0
 
     def HandleValidateInputs(self, args: core.ValidateInputsEventArgs):
         pass
