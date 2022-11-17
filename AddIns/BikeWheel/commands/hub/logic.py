@@ -174,7 +174,42 @@ class HubLogic:
                         self.axleDia = 1.2
 
     def HandleValidateInputs(self, args: core.ValidateInputsEventArgs):
-        pass
+        self.errorMessageTextInput.text = ""
+        if not skipValidate:
+            args.areInputsValid = False
+            if self.oldInput.value <= 0:
+                self.errorMessageTextInput.text = "OLD must be greater than 0"
+            elif (
+                self.leftFlangeDiaInput.value <= 0
+                or self.rightFlangeDiaInput.value <= 0
+            ):
+                self.errorMessageTextInput.text = (
+                    "Flange Diameters must be greater than 0"
+                )
+            elif self.centerToLeftFlangeInput.value <= 0:
+                self.errorMessageTextInput.text = (
+                    "Center to Left Flange must be greater than 0"
+                )
+            elif self.centerToRightFlangeInput.value <= 0:
+                self.errorMessageTextInput.text = (
+                    "Center to Right Flange must be greater than 0"
+                )
+            elif (
+                self.centerToLeftFlangeInput.value + self.centerToRightFlangeInput.value
+                > self.oldInput.value
+            ):
+                self.errorMessageTextInput.text = (
+                    "Sum of left and right flange distances cannot be larger than OLD"
+                )
+            elif (
+                self.leftFlangeDiaInput.value <= self.axleDia + 2.5
+                or self.rightFlangeDiaInput.value <= self.axleDia + 2.5
+            ):
+                self.errorMessageTextInput.text = (
+                    "One or both Flange Diameters is too small"
+                )
+            else:
+                args.areInputsValid = True
 
     def HandleExecute(self, args: core.CommandEventArgs):
         rimProfilePath = f'{self.resource_dir}{rimProfiles[self.rimInput.selectedItem.name]["profile"]}'
