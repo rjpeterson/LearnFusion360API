@@ -18,6 +18,9 @@ hubData = {}
 _origin = createPoint(0, 0, 0)
 _locknutToRotorFront = 0.99
 _locknutToRotorRear = 1.45
+# _centerLockSplineRad = 1.75
+# _discBoltCircleRad = 2.2
+# _discBoltRad = 0.25
 
 
 class HubLogic:
@@ -158,17 +161,17 @@ class HubLogic:
                     self.centerToLeftFlangeInput.value = 3.55
                     self.centerToRightFlangeInput.value = 3.0
             elif changedInput.id == "hubType" or changedInput.id == "axleType":
-                if self.hubTypeInput == "Front":
-                    if self.axleTypeInput == "QR":
+                if self.hubTypeInput.selectedItem.name == "Front":
+                    if self.axleTypeInput.selectedItem.name == "QR":
                         self.axleDia = 0.9
-                    elif self.axleTypeInput == "Thru MTB":
+                    elif self.axleTypeInput.selectedItem.name == "Thru MTB":
                         self.axleDia = 1.5
-                    elif self.axleTypeInput == "Thru Road":
+                    elif self.axleTypeInput.selectedItem.name == "Thru Road":
                         self.axleDia = 1.2
                     else:  # "Solid"
                         self.axleDia = 0.9
                 else:  # "Rear"
-                    if self.axleTypeInput == "QR" or self.axleTypeInput == "Solid":
+                    if self.axleTypeInput.selectedItem.name == "QR" or self.axleTypeInput.selectedItem.name == "Solid":
                         self.axleDia = 1.0
                     else:  # "Thru"
                         self.axleDia = 1.2
@@ -234,7 +237,8 @@ def createHub(logic: HubLogic):
     else:
         axleExtent = logic.old + 0.4
 
-    # importManager = app.importManager
+    importManager = app.importManager
+    
     rootComp = design.rootComponent
     # Create a new component by creating an occurrence.
     occurence = rootComp.occurrences.addNewComponent(core.Matrix3D.create())
@@ -245,6 +249,39 @@ def createHub(logic: HubLogic):
         newComp.name = f"{logic.hubType} {logic.axleType} {logic.old}  x {logic.spokes}"
 
     sketches = newComp.sketches
+
+    # Get dxf import options
+    freehubBaseOptions = importManager.createDXF2DImportOptions(f'{logic.resource_dir}/freehub_base.dxf', newComp.yZConstructionPlane)
+    freehubBaseOptions.isViewFit = False
+    freehubSplinesOptions = importManager.createDXF2DImportOptions(f'{logic.resource_dir}/freehub_splines.dxf', newComp.yZConstructionPlane)
+    freehubSplinesOptions.isViewFit = False
+    sixBoltBossOptions = importManager.createDXF2DImportOptions(f'{logic.resource_dir}/six_bolt_boss.dxf', newComp.yZConstructionPlane)
+    sixBoltBossOptions.isViewFit = False
+    centerlockBossOptions = importManager.createDXF2DImportOptions(f'{logic.resource_dir}/centerlock_boss.dxf', newComp.yZConstructionPlane)
+    centerlockBossOptions.isViewFit = False
+    centerlockSplinesOptions = importManager.createDXF2DImportOptions(f'{logic.resource_dir}/centerlock_splines.dxf', newComp.yZConstructionPlane)
+    centerlockSplinesOptions.isViewFit = False
+
+
+    # Set the flag true to merge all the layers of DXF into single sketch.
+    freehubBaseOptions.isSingleSketchResult = True
+    freehubSplinesOptions.isSingleSketchResult = True
+    sixBoltBossOptions.isSingleSketchResult = True
+    centerlockBossOptions.isSingleSketchResult = True
+    centerlockSplinesOptions.isSingleSketchResult = True
+
+    # Import dxf file to root component
+    importManager.importToTarget(freehubBaseOptions, newComp)
+    importManager.importToTarget(freehubSplinesOptions, newComp)
+    importManager.importToTarget(sixBoltBossOptions, newComp)
+    importManager.importToTarget(centerlockBossOptions, newComp)
+    importManager.importToTarget(centerlockSplinesOptions, newComp)
+
+    freehubBaseSketch = sketches.itemByName('freehub_base')
+    freehubSplinesSketch = sketches.itemByName('freehub_splines')
+    sixBoltBossSketch = sketches.itemByName('six_bolt_boss')
+    centerlockBossSketch = sketches.itemByName('centerlock_boss')
+    centerlockSplinesSketch = sketches.itemByName('centerlock_splines')
 
     # sketch axle
     axleSketch = fusion.Sketch.cast(sketches.add(newComp.yZConstructionPlane))
@@ -391,8 +428,8 @@ def createHub(logic: HubLogic):
     # sketch hub body
     hubBodySketch = fusion.Sketch.cast(sketches.add(newComp.xZConstructionPlane))
     lines = hubBodySketch.sketchCurves.sketchLines
-    leftBodyRad = (leftFlangeRad + hardwareRad) / 2.2
-    rightBodyRad = (rightFlangeRad + hardwareRad) / 2.2
+    leftBodyRad = (leftFlangeRad + hardwareRad) / 2.5
+    rightBodyRad = (rightFlangeRad + hardwareRad) / 2.5
     point1 = createPoint((-logic.old / 2) + 0.5, 0, 0)
     point2 = createPoint((-logic.old / 2) + 0.5, leftBodyRad, 0)
     point3 = createPoint(-logic.centerToLeftFlange, leftBodyRad, 0)
@@ -436,27 +473,50 @@ def createHub(logic: HubLogic):
         )
         freehubProfile = freehubSketch.profiles.item(0)
 
-        # revolve freehub
-        freehubRevolveInput = revolves.createInput(
-            freehubProfile,
-            newComp.xConstructionAxis,
-            fusion.FeatureOperations.NewBodyFeatureOperation,
+
+
+        # extrude freehub Base
+        collection = core.ObjectCollection.create()
+        collection.add(freehubBaseSketch.profiles.item(0))
+        collection.add(freehubBaseSketch.profiles.item(1))
+        freehubBaseExtrudeInput = extrudes.createInput(collection, fusion.FeatureOperations.NewBodyFeatureOperation)
+        offsetStart: fusion.OffsetStartDefinition = fusion.OffsetStartDefinition.create(
+            core.ValueInput.createByReal(logic.centerToRightFlange)
         )
-        freehubRevolveInput.setAngleExtent(False, core.ValueInput.createByReal(2 * pi))
-        freehubRevolve = revolves.add(freehubRevolveInput)
-        freehubRevolve.bodies.item(0).name = "Freehub"
+        extent = .5
+        extentDef: fusion.DistanceExtentDefinition = (
+            fusion.DistanceExtentDefinition.create(core.ValueInput.createByReal(extent))
+        )
+        extentDir = fusion.ExtentDirections.PositiveExtentDirection
+        freehubBaseExtrudeInput.startExtent = offsetStart
+        freehubBaseExtrudeInput.setOneSideExtent(extentDef, extentDir)
+        freehubBaseExtrude = extrudes.add(freehubBaseExtrudeInput)
+        freehubBaseBody = freehubBaseExtrude.bodies.item(0)
+        freehubBaseBody.name = "Freehub Base"
 
-    if logic.brakeType == "Disc 6-bolt":  # 44 bcd
-        circleRad = 2.2
-        boltRad = 0.25
+        # extrude freehub splines
+        collection = core.ObjectCollection.create()
+        # collection.add(freehubSplinesSketch.profiles.item(0))
+        collection.add(freehubSplinesSketch.profiles.item(1))
+        freehubSplinesExtrudeInput = extrudes.createInput(collection, fusion.FeatureOperations.NewBodyFeatureOperation)
+        offsetStart: fusion.OffsetStartDefinition = fusion.OffsetStartDefinition.create(
+            core.ValueInput.createByReal(logic.centerToRightFlange)
+        )
+        extent = (logic.old / 2) - logic.centerToRightFlange - 1
+        extentDef: fusion.DistanceExtentDefinition = (
+            fusion.DistanceExtentDefinition.create(core.ValueInput.createByReal(extent))
+        )
+        extentDir = fusion.ExtentDirections.PositiveExtentDirection
+        freehubSplinesExtrudeInput.startExtent = offsetStart
+        freehubSplinesExtrudeInput.setOneSideExtent(extentDef, extentDir)
+        freehubSplinesExtrude = extrudes.add(freehubSplinesExtrudeInput)
+        freehubSplinesBody = freehubSplinesExtrude.bodies.item(0)
+        freehubSplinesBody.name = "Freehub Splines"
 
+    if logic.brakeType == "Disc 6-bolt": 
         # sketch boss circle
-        bossSketch = fusion.Sketch.cast(sketches.add(newComp.yZConstructionPlane))
-        circles = bossSketch.sketchCurves.sketchCircles
-        circles.addByCenterRadius(_origin, circleRad + boltRad * 2)
-        circles.addByCenterRadius(_origin, hardwareRad + 0.3)
-        for profile in bossSketch.profiles:
-            if profile.profileLoops.count == 2:
+        for profile in sixBoltBossSketch.profiles:
+            if profile.profileLoops.count > 2:
                 bossProfile = profile
                 break
 
@@ -479,35 +539,60 @@ def createHub(logic: HubLogic):
         bossExtrudeInput.setOneSideExtent(extentDef, extentDir)
         bossExtrude = extrudes.add(bossExtrudeInput)
         bossBody = bossExtrude.bodies.item(0)
-        bossBody.name = "Brake Boss"
+        bossBody.name = "Rotor Boss"
 
-        # sketch brake boss hole to pattern
-        boltHoleSketchPlaneInput = fusion.ConstructionPlaneInput.cast(newComp.constructionPlanes.createInput())
-        boltHoleSketchPlaneInput.setByOffset(bossExtrude.endFaces.item(0), core.ValueInput.createByReal(0))
-        boltHoleSketchPlane = newComp.constructionPlanes.add(boltHoleSketchPlaneInput)
-        boltHoleSketch = fusion.Sketch.cast(sketches.add(boltHoleSketchPlane)) #TODO using boss face as plane creates more profiles in the sketch, create and use a construction plane instead
-        boltHoleSketch.name = "Brake Bolt Hole"
-        circles = boltHoleSketch.sketchCurves.sketchCircles
-        circles.addByCenterRadius(createPoint(0, circleRad, 0), boltRad)
-        boltHoleProfile = boltHoleSketch.profiles.item(0)
+    if logic.brakeType == "Disc CenterLock":  
+        # sketch boss circle
+        for profile in centerlockSplinesSketch.profiles:
+            if profile.profileLoops.count > 1:
+                bossProfile = profile
+                break
 
-        # cut bolt hole
-        # boltHoleExtrudeInput = extrudes.createInput(boltHoleProfile, fusion.FeatureOperations.CutFeatureOperation)
-        boltHoleExtrude = extrudes.addSimple(
-            boltHoleProfile,
-            core.ValueInput.createByReal(-0.5),
-            fusion.FeatureOperations.CutFeatureOperation,
+        # extrude boss
+        bossExtrudeInput = extrudes.createInput(
+            bossProfile, fusion.FeatureOperations.NewBodyFeatureOperation
         )
-
-        # pattern bolt hole
-        collection = core.ObjectCollection.create()
-        collection.add(boltHoleExtrude)
-        boltHolePatternInput = patterns.createInput(
-            collection, newComp.xConstructionAxis
+        offsetStart: fusion.OffsetStartDefinition = fusion.OffsetStartDefinition.create(
+            core.ValueInput.createByReal(-logic.centerToLeftFlange)
         )
-        boltHolePatternInput.isSymmetric = False
-        boltHolePatternInput.quantity = core.ValueInput.createByReal(6)
-        boltHolePatternInput.totalAngle = core.ValueInput.createByReal(2 * pi)
-        patterns.add(boltHolePatternInput)
+        if logic.hubType == "Rear":
+            extent = (logic.old / 2) - logic.centerToLeftFlange - _locknutToRotorRear
+        else:
+            extent = (logic.old / 2) - logic.centerToLeftFlange - _locknutToRotorFront
+        extentDef: fusion.DistanceExtentDefinition = (
+            fusion.DistanceExtentDefinition.create(core.ValueInput.createByReal(extent))
+        )
+        extentDir = fusion.ExtentDirections.NegativeExtentDirection
+        bossExtrudeInput.startExtent = offsetStart
+        bossExtrudeInput.setOneSideExtent(extentDef, extentDir)
+        bossExtrude = extrudes.add(bossExtrudeInput)
+        bossBody = bossExtrude.bodies.item(0)
+        bossBody.name = "Rotor Splines"
 
+        # sketch boss circle
+        for profile in centerlockBossSketch.profiles:
+            if profile.profileLoops.count > 1:
+                bossProfile = profile
+                break
+
+        # extrude boss
+        bossExtrudeInput = extrudes.createInput(
+            bossProfile, fusion.FeatureOperations.NewBodyFeatureOperation
+        )
+        offsetStart: fusion.OffsetStartDefinition = fusion.OffsetStartDefinition.create(
+            core.ValueInput.createByReal(-logic.centerToLeftFlange)
+        )
+        
+        extent = .5
+        extentDef: fusion.DistanceExtentDefinition = (
+            fusion.DistanceExtentDefinition.create(core.ValueInput.createByReal(extent))
+        )
+        extentDir = fusion.ExtentDirections.NegativeExtentDirection
+        bossExtrudeInput.startExtent = offsetStart
+        bossExtrudeInput.setOneSideExtent(extentDef, extentDir)
+        bossExtrude = extrudes.add(bossExtrudeInput)
+        bossBody = bossExtrude.bodies.item(0)
+        bossBody.name = "Rotor Boss"
+        
     # chamfers & fillets
+    newComp.isSketchFolderLightBulbOn = False
