@@ -140,11 +140,13 @@ class RimLogic():
         pass
 
     def HandleExecute(self, args: core.CommandEventArgs):
-        rimProfilePath = f'{self.resource_dir}{rimProfiles[self.rimInput.selectedItem.name]["profile"]}'
-        spokeCount = int(self.spokesInput.selectedItem.name)
-        createRim(rimProfilePath, self.rimInput.selectedItem.name, self.sizeInput.selectedItem.name, spokeCount)
+        self.rimProfilePath = f'{self.resource_dir}{rimProfiles[self.rimInput.selectedItem.name]["profile"]}'
+        self.rim = self.rimInput.selectedItem.name
+        self.size = self.sizeInput.selectedItem.name
+        self.spokeCount = int(self.spokesInput.selectedItem.name)
+        createRim(self)
     
-def createRim(rimProfilePath: str, rim: str, size: str, spokeCount: int):
+def createRim(self: RimLogic):
     schraederRadius = 0.4
     prestaRadius = 0.3
     spokeHoleRadius = 0.225
@@ -155,10 +157,10 @@ def createRim(rimProfilePath: str, rim: str, size: str, spokeCount: int):
     # Create a new component by creating an occurrence.
     occurence = rootComp.occurrences.addNewComponent(core.Matrix3D.create())
     newComp = occurence.component
-    newComp.name = f'Rim {rim} x {size} x {spokeCount}'
+    newComp.name = f'Rim {self.rim} x {self.size} x {self.spokeCount}'
 
     # Get dxf import options
-    dxfOptions = importManager.createDXF2DImportOptions(rimProfilePath, newComp.xYConstructionPlane)
+    dxfOptions = importManager.createDXF2DImportOptions(self.rimProfilePath, newComp.xYConstructionPlane)
     dxfOptions.isViewFit = False
 
     # Set the flag true to merge all the layers of DXF into single sketch.
@@ -181,7 +183,7 @@ def createRim(rimProfilePath: str, rim: str, size: str, spokeCount: int):
         rimProfile = rimProfileSketch.profiles.item(0)
 
     # Draw line to revolve around
-    rimErd = rimProfiles[rim]['sizes'][size]
+    rimErd = rimProfiles[self.rim]['sizes'][self.size]
     revolveAxisSketch = fusion.Sketch.cast(sketches.add(newComp.xYConstructionPlane))
     revolveAxisSketch.name = 'Revolve Axis'
     lines = revolveAxisSketch.sketchCurves.sketchLines
@@ -221,7 +223,7 @@ def createRim(rimProfilePath: str, rim: str, size: str, spokeCount: int):
     # Create angled plane for first extrude cut
     constructionPlanes = newComp.constructionPlanes
     spokeHolePlaneInput: fusion.ConstructionPlaneInput = constructionPlanes.createInput()
-    spokeHolePlaneInput.setByAngle(revolveAxis, core.ValueInput.createByReal(2 * pi / spokeCount / 2), newComp.xYConstructionPlane)
+    spokeHolePlaneInput.setByAngle(revolveAxis, core.ValueInput.createByReal(2 * pi / self.spokeCount / 2), newComp.xYConstructionPlane)
     spokeHolePlane = constructionPlanes.add(spokeHolePlaneInput)
 
     # Create sketch for spoke hole cut
@@ -244,7 +246,7 @@ def createRim(rimProfilePath: str, rim: str, size: str, spokeCount: int):
     collection = core.ObjectCollection.create()
     collection.add(spokeHoleExtrudeFeature)
     spokeHolePatternInput = patterns.createInput(collection, revolveAxis)
-    spokeHolePatternInput.quantity = core.ValueInput.createByReal(spokeCount)
+    spokeHolePatternInput.quantity = core.ValueInput.createByReal(self.spokeCount)
     spokeHolePatternInput.isSymmetric = False
     spokeHolePatternInput.totalAngle = core.ValueInput.createByReal(2 * pi)
     spokeHolePatternFeature = patterns.add(spokeHolePatternInput)
@@ -262,7 +264,7 @@ def createRim(rimProfilePath: str, rim: str, size: str, spokeCount: int):
     collection = core.ObjectCollection.create()
     collection.add(nippleHoleExtrudeFeature)
     nippleHolePatternInput = patterns.createInput(collection, revolveAxis)
-    nippleHolePatternInput.quantity = core.ValueInput.createByReal(spokeCount)
+    nippleHolePatternInput.quantity = core.ValueInput.createByReal(self.spokeCount)
     nippleHolePatternInput.isSymmetric = False
     nippleHolePatternInput.totalAngle = core.ValueInput.createByReal(2 * pi)
     nippleHolePatternFeature = patterns.add(nippleHolePatternInput)

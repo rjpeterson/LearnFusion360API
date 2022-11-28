@@ -1,3 +1,4 @@
+from enum import Enum
 from math import pi
 import adsk.core as core
 import adsk.fusion as fusion
@@ -12,6 +13,11 @@ if not design:
     alert('You must be in the design workspace to use this command')
 skipValidate = False
 
+# class SpokeType(Enum):
+#     BUTTEDSTRAIGHT = 1
+#     BUTTEDJ = 2
+#     BLADEDSTRAIGHT = 3
+#     BLADEDJ = 4
 
 class SpokeLogic():
     def __init__(self) -> None:
@@ -83,26 +89,20 @@ class SpokeLogic():
             self.straightPull = self.straightPullInput.value
 
     def HandleExecute(self, args: core.CommandEventArgs):
-        createSpoke(
-            self.bladed,
-            self.butted,
-            self.diameter,
-            self.length,
-            self.straightPull
-        )
+        createSpoke(self)
 
-def createSpoke(bladed: bool, butted: bool, diameter: float, length: int, straightPull: bool):
-    nonRound = True if butted or bladed else False
+def createSpoke(self: SpokeLogic):
+    nonRound = True if self.butted or self.bladed else False
     threadLength = 1.0 # cm
     headDepth = 0.15 # cm
     jBendData = {
         "headOffest": .305, # cm
         "bendRadius": .3375, # cm
     }
-    if  straightPull:
-        adjustedLength = length + headDepth
+    if  self.straightPull:
+        adjustedLength = self.length + headDepth
     else:
-        adjustedLength = length - jBendData['bendRadius'] + (diameter / 2)
+        adjustedLength = self.length - jBendData['bendRadius'] + (self.diameter / 2)
 
     alert = ui.messageBox
     newPoint = core.Point3D.create
@@ -111,7 +111,7 @@ def createSpoke(bladed: bool, butted: bool, diameter: float, length: int, straig
     # Create a new component by creating an occurrence.
     occurence = rootComp.occurrences.addNewComponent(core.Matrix3D.create())
     newComp = occurence.component
-    newComp.name = f'Spoke {diameter} x {length}'
+    newComp.name = f'Spoke {self.diameter} x {self.length}'
 
     sketches = newComp.sketches
     xYPlane = newComp.xYConstructionPlane
@@ -122,7 +122,7 @@ def createSpoke(bladed: bool, butted: bool, diameter: float, length: int, straig
     pathLines = pathSketch.sketchCurves.sketchLines
 
     # Sketch the path for spoke length and j-bend
-    if straightPull:
+    if self.straightPull:
         shaftStart = newPoint(0,0,0)
         shaftEnd = newPoint(adjustedLength, 0, 0)
     else:
@@ -152,7 +152,7 @@ def createSpoke(bladed: bool, butted: bool, diameter: float, length: int, straig
     profileSketch = fusion.Sketch.cast(newComp.sketches.add(profilePlane))
     profileSketch.name = ' base diameter sketch'
     profileCircles = profileSketch.sketchCurves.sketchCircles
-    profileCircles.addByCenterRadius(newPoint(0,0,0), diameter / 2)
+    profileCircles.addByCenterRadius(newPoint(0,0,0), self.diameter / 2)
     bodyProfile = profileSketch.profiles.item(0)
 
     # Extrude a cylinder along the path
@@ -182,7 +182,7 @@ def createSpoke(bladed: bool, butted: bool, diameter: float, length: int, straig
         endPlane = newComp.constructionPlanes.add(endPlaneInput)
         endSketch: fusion.Sketch = sketches.add(endPlane)
         endSketch.name = 'endSketch'
-        endSketch.sketchCurves.sketchCircles.addByCenterRadius(newPoint(0,0,0), diameter / 2)
+        endSketch.sketchCurves.sketchCircles.addByCenterRadius(newPoint(0,0,0), self.diameter / 2)
         profile5 = endSketch.profiles.item(0) # Profile 5 (tip of spoke)
 
         extrudes = newComp.features.extrudeFeatures
@@ -207,12 +207,12 @@ def createSpoke(bladed: bool, butted: bool, diameter: float, length: int, straig
         taper2Sketch: fusion.Sketch = sketches.add(taper2Plane)
         taper2Sketch.name = 'taper2Sketch'
 
-        if butted:
-            taper1Sketch.sketchCurves.sketchCircles.addByCenterRadius(newPoint(0, 0, 0), diameter * .375)
+        if self.butted:
+            taper1Sketch.sketchCurves.sketchCircles.addByCenterRadius(newPoint(0, 0, 0), self.diameter * .375)
             profile2 = taper1Sketch.profiles.item(0) # Profile 2 (thin end of first taper)
-            taper2Sketch.sketchCurves.sketchCircles.addByCenterRadius(newPoint(0,0,0), diameter * .375)
+            taper2Sketch.sketchCurves.sketchCircles.addByCenterRadius(newPoint(0,0,0), self.diameter * .375)
             profile3 = taper2Sketch.profiles.item(0) # Profile 3 (thin end of first taper)
-        if bladed:
+        if self.bladed:
             taper1Sketch.sketchCurves.sketchLines.addTwoPointRectangle(newPoint(0.045, .11, 0), newPoint(-0.045, -.11, 0))
             profile2 = taper1Sketch.profiles.item(0) # Profile 2 (flat end of first taper)
             taper2Sketch.sketchCurves.sketchLines.addTwoPointRectangle(newPoint(0.045, .11, 0), newPoint(-0.045, -.11, 0))
@@ -239,9 +239,9 @@ def createSpoke(bladed: bool, butted: bool, diameter: float, length: int, straig
     headSketch = fusion.Sketch.cast(sketches.add(xZPlane))
     headArcs = headSketch.sketchCurves.sketchArcs
     headLines = headSketch.sketchCurves.sketchLines
-    point1 = newPoint(0, -diameter / 2, 0)
-    point2 = newPoint(headDepth, -diameter / 2, 0)
-    arcCenter = newPoint(.1071, -diameter / 2, 0)
+    point1 = newPoint(0, -self.diameter / 2, 0)
+    point2 = newPoint(headDepth, -self.diameter / 2, 0)
+    arcCenter = newPoint(.1071, -self.diameter / 2, 0)
     arc = headArcs.addByCenterStartSweep(arcCenter, point1, pi / 2)
     headLines.addByTwoPoints(arc.endSketchPoint, point2)
     headLines.addByTwoPoints(point2, point1)
