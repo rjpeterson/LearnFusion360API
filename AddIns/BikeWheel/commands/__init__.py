@@ -6,6 +6,7 @@
 from .spoke import entry as Spoke
 from .rim import entry as Rim
 from .hub import entry as Hub
+from .wheel import entry as Wheel
 
 # add your imported modules to this list.
 # Fusion will automatically call the start() and stop() functions.
@@ -13,6 +14,7 @@ commands = [
     Hub,
     Rim,
     Spoke,
+    Wheel
 ]
 
 
