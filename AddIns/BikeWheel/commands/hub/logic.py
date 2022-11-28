@@ -116,6 +116,21 @@ _origin = createPoint(0, 0, 0)
 _locknutToRotorFront = 0.99
 _locknutToRotorRear = 1.45
 
+axleDiameters = {
+    "Front": {
+        "QR" : 0.9,
+        "ThruMTB": 1.5,
+        "ThruRoad": 1.2,
+        "Solid": 0.9
+    },
+    "Rear": {
+        "QR": 1.0,
+        "ThruMTB": 1.2,
+        "ThruRoad": 1.2,
+        "Solid": 1.0
+    }
+}
+
 class HubLogic:
     @property
     def resource_dir(self):
@@ -285,20 +300,7 @@ class HubLogic:
                 #     self.centerToLeftFlangeInput.value = 3.55
                 #     self.centerToRightFlangeInput.value = 3.0
             elif changedInput.id == "hubType" or changedInput.id == "axleType":
-                if self.hubTypeInput.selectedItem.name == "Front":
-                    if self.axleTypeInput.selectedItem.name == "QR":
-                        self.axleDia = 0.9
-                    elif self.axleTypeInput.selectedItem.name == "Thru MTB":
-                        self.axleDia = 1.5
-                    elif self.axleTypeInput.selectedItem.name == "Thru Road":
-                        self.axleDia = 1.2
-                    else:  # "Solid"
-                        self.axleDia = 0.9
-                else:  # "Rear"
-                    if self.axleTypeInput.selectedItem.name == "QR" or self.axleTypeInput.selectedItem.name == "Solid":
-                        self.axleDia = 1.0
-                    else:  # "Thru"
-                        self.axleDia = 1.2
+                self.axleDia = axleDiameters[self.hubTypeInput.selectedItem.name][self.axleTypeInput.selectedItem.name]
 
     def HandleValidateInputs(self, args: core.ValidateInputsEventArgs):
         self.errorMessageTextInput.text = ""
