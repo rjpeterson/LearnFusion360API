@@ -1,5 +1,6 @@
 import os
 from math import pi
+from enum import Enum
 
 import adsk.core as core
 import adsk.fusion as fusion
@@ -14,14 +15,106 @@ if not design:
     alert("You must be in the design workspace to use this command")
 skipValidate = False
 
-hubData = {}
+class HubType(Enum):
+    FRONT = 1
+    REAR = 2
+
+class BrakeType(Enum):
+    RIM = 1
+    SIXBOLT = 2
+    CL = 3
+
+class AxleType(Enum):
+    SOLID = 1
+    QR = 2
+    THRUROAD = 3
+    THRUMTB = 4
+
+hubData = {
+    "Chris King R45D CL Front": {
+        "type": HubType.FRONT,
+        "brake": BrakeType.CL,
+        "axle": AxleType.THRUROAD,
+        "old": 10.0,
+        "leftFlangeDia": 5.74,
+        "rightFlangeDia": 5.74,
+        "centerToLeftFlange": 2.23,
+        "centerToRightFlange": 3.06,
+    },
+    "Chris King R45D CL Rear": {
+        "type": HubType.REAR,
+        "brake": BrakeType.CL,
+        "axle": AxleType.THRUROAD,
+        "old": 14.2,
+        "leftFlangeDia": 5.74,
+        "rightFlangeDia": 5.74,
+        "centerToLeftFlange": 3.3,
+        "centerToRightFlange": 1.87,
+    },
+    "Hope Pro 4 Boost Front": {
+        "type": HubType.FRONT,
+        "brake": BrakeType.SIXBOLT,
+        "axle": AxleType.THRUMTB,
+        "old": 11.0,
+        "leftFlangeDia": 5.7,
+        "rightFlangeDia": 5.7,
+        "centerToLeftFlange": 2.5,
+        "centerToRightFlange": 3.3,
+    },
+    "Hope Pro 4 Boost Rear": {
+        "type": HubType.REAR,
+        "brake": BrakeType.SIXBOLT,
+        "axle": AxleType.THRUMTB,
+        "old": 14.8,
+        "leftFlangeDia": 5.7,
+        "rightFlangeDia": 5.7,
+        "centerToLeftFlange": 3.5,
+        "centerToRightFlange": 2.2,
+    },
+    "Phil Wood CL Shimano Compatible Front": {
+        "type": HubType.FRONT,
+        "brake": BrakeType.CL,
+        "axle": AxleType.QR,
+        "old": 10.0,
+        "leftFlangeDia": 6.6,
+        "rightFlangeDia": 6.6,
+        "centerToLeftFlange": 1.9,
+        "centerToRightFlange": 3.4,
+    },
+    "Phil Wood CL Shimano Compatible Rear": {
+        "type": HubType.REAR,
+        "brake": BrakeType.CL,
+        "axle": AxleType.QR,
+        "old": 13.5,
+        "leftFlangeDia": 6.6,
+        "rightFlangeDia": 6.6,
+        "centerToLeftFlange": 3.5,
+        "centerToRightFlange": 1.8,
+    },
+    "White Industries Track Front": {
+        "type": HubType.FRONT,
+        "brake": BrakeType.RIM,
+        "axle": AxleType.SOLID,
+        "old": 10.0,
+        "leftFlangeDia": 6.5,
+        "rightFlangeDia": 6.5,
+        "centerToLeftFlange": 3.3,
+        "centerToRightFlange": 3.3,
+    },
+    "White Industries Track Rear non-f/f": {
+        "type": HubType.REAR,
+        "brake": BrakeType.RIM,
+        "axle": AxleType.SOLID,
+        "old": 12.0,
+        "leftFlangeDia": 7.3,
+        "rightFlangeDia": 7.3,
+        "centerToLeftFlange": 3.55,
+        "centerToRightFlange": 3.0,
+    }
+}
 _origin = createPoint(0, 0, 0)
 _locknutToRotorFront = 0.99
 _locknutToRotorRear = 1.45
-# _centerLockSplineRad = 1.75
-# _discBoltCircleRad = 2.2
-# _discBoltRad = 0.25
-
 
 class HubLogic:
     @property
@@ -55,8 +148,8 @@ class HubLogic:
             "preset", "Preset", core.DropDownStyles.TextListDropDownStyle
         )
         self.presetInput.listItems.add("None", True)
-        self.presetInput.listItems.add("Shimano Deore XT FH-M8110-B 148mm Rear", False)
-        self.presetInput.listItems.add("White Industries Track Rear non-f/f", False)
+        for hub in hubData:
+            self.presetInput.listItems.add(hub, False)
 
         self.hubTypeInput = inputs.addRadioButtonGroupCommandInput(
             "hubType", "Hub Type"
@@ -67,27 +160,27 @@ class HubLogic:
         self.brakeTypeInput = inputs.addRadioButtonGroupCommandInput(
             "brakeType", "Brake Type"
         )
-        self.rimOption: core.ListItem = self.brakeTypeInput.listItems.add("Rim", True)
-        self.sixBoltOption: core.ListItem = self.brakeTypeInput.listItems.add(
+        self.brakeRimOption: core.ListItem = self.brakeTypeInput.listItems.add("Rim", True)
+        self.brakeSixBoltOption: core.ListItem = self.brakeTypeInput.listItems.add(
             "Disc 6-bolt", False
         )
-        self.centerLockOption: core.ListItem = self.brakeTypeInput.listItems.add(
+        self.brakeCenterLockOption: core.ListItem = self.brakeTypeInput.listItems.add(
             "Disc CenterLock", False
         )
 
         self.axleTypeInput = inputs.addRadioButtonGroupCommandInput(
             "axleType", "Axle Type"
         )
-        self.qrOption: core.ListItem = self.axleTypeInput.listItems.add(
+        self.axleQrOption: core.ListItem = self.axleTypeInput.listItems.add(
             "QR", True
         )  # Front 9mm Rear 10mm
-        self.thruMTBOption: core.ListItem = self.axleTypeInput.listItems.add(
+        self.axleThruMTBOption: core.ListItem = self.axleTypeInput.listItems.add(
             "Thru MTB", False
         )  # Front 15mm Rear 12mm
-        self.thruRoadOption: core.ListItem = self.axleTypeInput.listItems.add(
+        self.axleThruRoadOption: core.ListItem = self.axleTypeInput.listItems.add(
             "Thru Road", False
         )  # Front 12mm Rear 12mm
-        self.solidOption: core.ListItem = self.axleTypeInput.listItems.add(
+        self.axleSolidOption: core.ListItem = self.axleTypeInput.listItems.add(
             "Solid", False
         )
 
@@ -136,30 +229,61 @@ class HubLogic:
         changedInput = args.input
         if not skipValidate:
             if changedInput.id == "preset":
-                if (
-                    self.presetInput.selectedItem.name
-                    == "Shimano Deore XT FH-M8110-B 148mm Rear"
-                ):
-                    self.rearOption.isSelected = True
-                    self.centerLockOption.isSelected = True
-                    self.thruMTBOption.isSelected = True
-                    self.oldInput.value = 14.8
-                    self.leftFlangeDiaInput.value = 6.0
-                    self.rightFlangeDiaInput.value = 6.1
-                    self.centerToLeftFlangeInput.value = 3.6
-                    self.centerToRightFlangeInput.value = 2.2
-                if (
-                    self.presetInput.selectedItem.name
-                    == "White Industries Track Rear non-f/f"
-                ):
-                    self.rearOption.isSelected = True
-                    self.rimOption.isSelected = True
-                    self.solidOption.isSelected = True
-                    self.oldInput.value = 12.0
-                    self.leftFlangeDiaInput.value = 7.3
-                    self.rightFlangeDiaInput.value = 7.3
-                    self.centerToLeftFlangeInput.value = 3.55
-                    self.centerToRightFlangeInput.value = 3.0
+                if self.presetInput.selectedItem.name != "None":
+                    chosenHub = hubData[self.presetInput.selectedItem.name]
+                    hubType: HubType = chosenHub["type"]
+                    brakeType: BrakeType = chosenHub["brake"]
+                    axleType: AxleType = chosenHub["axle"]
+                    if hubType == HubType.FRONT:
+                        self.frontOption.isSelected = True
+                    else:
+                        self.rearOption.isSelected = True
+
+                    if brakeType == BrakeType.RIM:
+                        self.brakeRimOption.isSelected = True
+                    elif brakeType == BrakeType.SIXBOLT:
+                        self.brakeSixBoltOption.isSelected = True
+                    else: # BrakeType.CL
+                        self.brakeCenterLockOption.isSelected = True
+
+                    if axleType == AxleType.SOLID:
+                        self.axleSolidOption.isSelected = True
+                    elif axleType == AxleType.QR:
+                        self.axleQrOption.isSelected = True
+                    elif axleType == AxleType.THRUMTB:
+                        self.axleThruMTBOption.isSelected = True
+                    else: # AxleType.THRUROAD
+                        self.axleThruRoadOption.isSelected = True
+
+                    self.oldInput.value = chosenHub["old"]
+                    self.leftFlangeDiaInput.value = chosenHub["leftFlangeDia"]
+                    self.rightFlangeDiaInput.value = chosenHub["rightFlangeDia"]
+                    self.centerToLeftFlangeInput.value = chosenHub["centerToLeftFlange"]
+                    self.centerToRightFlangeInput.value = chosenHub["centerToRightFlange"]
+                # if (
+                #     self.presetInput.selectedItem.name
+                #     == "Shimano Deore XT FH-M8110-B 148mm Rear"
+                # ):
+                #     self.rearOption.isSelected = True
+                #     self.brakeCenterLockOption.isSelected = True
+                #     self.axleThruMTBOption.isSelected = True
+                #     self.oldInput.value = 14.8
+                #     self.leftFlangeDiaInput.value = 6.0
+                #     self.rightFlangeDiaInput.value = 6.1
+                #     self.centerToLeftFlangeInput.value = 3.6
+                #     self.centerToRightFlangeInput.value = 2.2
+                # if (
+                #     self.presetInput.selectedItem.name
+                #     == "White Industries Track Rear non-f/f"
+                # ):
+                #     self.rearOption.isSelected = True
+                #     self.brakeRimOption.isSelected = True
+                #     self.axleSolidOption.isSelected = True
+                #     self.oldInput.value = 12.0
+                #     self.leftFlangeDiaInput.value = 7.3
+                #     self.rightFlangeDiaInput.value = 7.3
+                #     self.centerToLeftFlangeInput.value = 3.55
+                #     self.centerToRightFlangeInput.value = 3.0
             elif changedInput.id == "hubType" or changedInput.id == "axleType":
                 if self.hubTypeInput.selectedItem.name == "Front":
                     if self.axleTypeInput.selectedItem.name == "QR":
