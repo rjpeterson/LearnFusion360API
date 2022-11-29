@@ -16,25 +16,25 @@ if not design:
 skipValidate = False
 
 class HubType(Enum):
-    FRONT = 1
-    REAR = 2
+    Front = 1
+    Rear = 2
 
 class BrakeType(Enum):
-    RIM = 1
-    SIXBOLT = 2
-    CL = 3
+    Rim = 1
+    Sixbolt = 2
+    CenterLock = 3
 
 class AxleType(Enum):
-    SOLID = 1
+    Solid = 1
     QR = 2
-    THRUROAD = 3
-    THRUMTB = 4
+    ThruRoad = 3
+    ThruMTB = 4
 
 hubData = {
     "Chris King R45D CL Front": {
-        "type": HubType.FRONT,
-        "brake": BrakeType.CL,
-        "axle": AxleType.THRUROAD,
+        "type": HubType.Front,
+        "brake": BrakeType.CenterLock,
+        "axle": AxleType.ThruRoad,
         "old": 10.0,
         "leftFlangeDia": 5.74,
         "rightFlangeDia": 5.74,
@@ -42,9 +42,9 @@ hubData = {
         "centerToRightFlange": 3.06,
     },
     "Chris King R45D CL Rear": {
-        "type": HubType.REAR,
-        "brake": BrakeType.CL,
-        "axle": AxleType.THRUROAD,
+        "type": HubType.Rear,
+        "brake": BrakeType.CenterLock,
+        "axle": AxleType.ThruRoad,
         "old": 14.2,
         "leftFlangeDia": 5.74,
         "rightFlangeDia": 5.74,
@@ -52,9 +52,9 @@ hubData = {
         "centerToRightFlange": 1.87,
     },
     "Hope Pro 4 Boost Front": {
-        "type": HubType.FRONT,
-        "brake": BrakeType.SIXBOLT,
-        "axle": AxleType.THRUMTB,
+        "type": HubType.Front,
+        "brake": BrakeType.Sixbolt,
+        "axle": AxleType.ThruMTB,
         "old": 11.0,
         "leftFlangeDia": 5.7,
         "rightFlangeDia": 5.7,
@@ -62,9 +62,9 @@ hubData = {
         "centerToRightFlange": 3.3,
     },
     "Hope Pro 4 Boost Rear": {
-        "type": HubType.REAR,
-        "brake": BrakeType.SIXBOLT,
-        "axle": AxleType.THRUMTB,
+        "type": HubType.Rear,
+        "brake": BrakeType.Sixbolt,
+        "axle": AxleType.ThruMTB,
         "old": 14.8,
         "leftFlangeDia": 5.7,
         "rightFlangeDia": 5.7,
@@ -72,8 +72,8 @@ hubData = {
         "centerToRightFlange": 2.2,
     },
     "Phil Wood CL Shimano Compatible Front": {
-        "type": HubType.FRONT,
-        "brake": BrakeType.CL,
+        "type": HubType.Front,
+        "brake": BrakeType.CenterLock,
         "axle": AxleType.QR,
         "old": 10.0,
         "leftFlangeDia": 6.6,
@@ -82,8 +82,8 @@ hubData = {
         "centerToRightFlange": 3.4,
     },
     "Phil Wood CL Shimano Compatible Rear": {
-        "type": HubType.REAR,
-        "brake": BrakeType.CL,
+        "type": HubType.Rear,
+        "brake": BrakeType.CenterLock,
         "axle": AxleType.QR,
         "old": 13.5,
         "leftFlangeDia": 6.6,
@@ -92,9 +92,9 @@ hubData = {
         "centerToRightFlange": 1.8,
     },
     "White Industries Track Front": {
-        "type": HubType.FRONT,
-        "brake": BrakeType.RIM,
-        "axle": AxleType.SOLID,
+        "type": HubType.Front,
+        "brake": BrakeType.Rim,
+        "axle": AxleType.Solid,
         "old": 10.0,
         "leftFlangeDia": 6.5,
         "rightFlangeDia": 6.5,
@@ -102,9 +102,9 @@ hubData = {
         "centerToRightFlange": 3.3,
     },
     "White Industries Track Rear non-f/f": {
-        "type": HubType.REAR,
-        "brake": BrakeType.RIM,
-        "axle": AxleType.SOLID,
+        "type": HubType.Rear,
+        "brake": BrakeType.Rim,
+        "axle": AxleType.Solid,
         "old": 12.0,
         "leftFlangeDia": 7.3,
         "rightFlangeDia": 7.3,
@@ -177,7 +177,7 @@ class HubLogic:
         )
         self.brakeRimOption: core.ListItem = self.brakeTypeInput.listItems.add("Rim", True)
         self.brakeSixBoltOption: core.ListItem = self.brakeTypeInput.listItems.add(
-            "Disc 6-bolt", False
+            "Sixbolt", False
         )
         self.brakeCenterLockOption: core.ListItem = self.brakeTypeInput.listItems.add(
             "Disc CenterLock", False
@@ -190,10 +190,10 @@ class HubLogic:
             "QR", True
         )  # Front 9mm Rear 10mm
         self.axleThruMTBOption: core.ListItem = self.axleTypeInput.listItems.add(
-            "Thru MTB", False
+            "ThruMTB", False
         )  # Front 15mm Rear 12mm
         self.axleThruRoadOption: core.ListItem = self.axleTypeInput.listItems.add(
-            "Thru Road", False
+            "ThruRoad", False
         )  # Front 12mm Rear 12mm
         self.axleSolidOption: core.ListItem = self.axleTypeInput.listItems.add(
             "Solid", False
@@ -249,23 +249,23 @@ class HubLogic:
                     hubType: HubType = chosenHub["type"]
                     brakeType: BrakeType = chosenHub["brake"]
                     axleType: AxleType = chosenHub["axle"]
-                    if hubType == HubType.FRONT:
+                    if hubType == HubType.Front:
                         self.frontOption.isSelected = True
                     else:
                         self.rearOption.isSelected = True
 
-                    if brakeType == BrakeType.RIM:
+                    if brakeType == BrakeType.Rim:
                         self.brakeRimOption.isSelected = True
-                    elif brakeType == BrakeType.SIXBOLT:
+                    elif brakeType == BrakeType.Sixbolt:
                         self.brakeSixBoltOption.isSelected = True
                     else: # BrakeType.CL
                         self.brakeCenterLockOption.isSelected = True
 
-                    if axleType == AxleType.SOLID:
+                    if axleType == AxleType.Solid:
                         self.axleSolidOption.isSelected = True
                     elif axleType == AxleType.QR:
                         self.axleQrOption.isSelected = True
-                    elif axleType == AxleType.THRUMTB:
+                    elif axleType == AxleType.ThruMTB:
                         self.axleThruMTBOption.isSelected = True
                     else: # AxleType.THRUROAD
                         self.axleThruRoadOption.isSelected = True
@@ -457,6 +457,7 @@ def createHub(logic: HubLogic):
     lFlangeExtrude = extrudes.add(lFlangeExtrudeInput)
     lFlangeBody = lFlangeExtrude.bodies.item(0)
     lFlangeBody.name = "Left Flange"
+    lFlangeBodyOutsideFaceEdges = lFlangeExtrude.endFaces.item(0).edges
 
     rFlangeExtrudeInput = extrudes.createInput(
         rightFlangeProfile, fusion.FeatureOperations.NewBodyFeatureOperation
@@ -473,8 +474,9 @@ def createHub(logic: HubLogic):
     rFlangeExtrude = extrudes.add(rFlangeExtrudeInput)
     rFlangeBody = rFlangeExtrude.bodies.item(0)
     rFlangeBody.name = "Right Flange"
+    rFlangeBodyOutsideFaceEdges = rFlangeExtrude.endFaces.item(0).edges
 
-    # cut single spoke hole TODO add left and right difference flange diameters
+    # cut single spoke hole
     leftSpokeHoleSketch = fusion.Sketch.cast(sketches.add(newComp.yZConstructionPlane))
     circles = leftSpokeHoleSketch.sketchCurves.sketchCircles
     circles.addByCenterRadius(createPoint(0, leftFlangeRad, 0), 0.125)
@@ -515,7 +517,18 @@ def createHub(logic: HubLogic):
     spokeHolePatternInput.isSymmetric = False
     spokeHolePatternInput.quantity = core.ValueInput.createByReal(logic.spokes / 2)
     spokeHolePatternInput.totalAngle = core.ValueInput.createByReal(2 * pi)
+    spokeHolePatternInput.patternComputeOption = fusion.PatternComputeOptions.OptimizedPatternCompute
     spokeHolePattern = patterns.add(spokeHolePatternInput)
+
+    # get edges for wheel assembly
+    lSpokeHoleEdges = []
+    rSpokeHoleEdges = []
+    for face in spokeHolePattern.faces:
+        for edge in face.edges:
+            if edge in lFlangeBodyOutsideFaceEdges:
+                lSpokeHoleEdges.append(edge)
+            elif edge in rFlangeBodyOutsideFaceEdges:
+                rSpokeHoleEdges.append(edge)
 
     # offest one flange body
     moves = newComp.features.moveFeatures
@@ -639,7 +652,7 @@ def createHub(logic: HubLogic):
         freehubSplinesBody = freehubSplinesExtrude.bodies.item(0)
         freehubSplinesBody.name = "Freehub Splines"
 
-    if logic.brakeType == "Disc 6-bolt": 
+    if logic.brakeType == "Sixbolt": 
         # sketch boss circle
         for profile in sixBoltBossSketch.profiles:
             if profile.profileLoops.count > 2:
@@ -722,3 +735,6 @@ def createHub(logic: HubLogic):
         
     # chamfers & fillets
     newComp.isSketchFolderLightBulbOn = False
+    
+    # return edges to use for spoke joints
+    return [lSpokeHoleEdges, rSpokeHoleEdges]
