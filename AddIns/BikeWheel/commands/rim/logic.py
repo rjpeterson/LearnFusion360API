@@ -275,4 +275,8 @@ def createRim(self: RimLogic):
     newComp.isConstructionFolderLightBulbOn = False
 
     # return joint faces
-    return spokeHolePatternFeature.faces
+    jointFaces = []
+    jointFaces.append(spokeHoleExtrudeFeature.sideFaces.item(0))
+    for face in spokeHolePatternFeature.faces:
+        jointFaces.append(face)
+    return jointFaces

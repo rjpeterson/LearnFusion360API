@@ -126,6 +126,7 @@ class WheelLogic():
         self.hub_logic.centerToLeftFlange = Hub.hubData[self.hub]["centerToLeftFlange"]
         self.hub_logic.centerToRightFlange = Hub.hubData[self.hub]["centerToRightFlange"]
         self.hub_logic.spokes = self.spokes
+        self.hub_logic.preset = self.hub
 
         self.spoke_logic = Spoke.SpokeLogic()
         # self.bladed = self.bladedInput.value
@@ -143,6 +144,88 @@ class WheelLogic():
         createWheel(self)
 
 def createWheel(self: WheelLogic):
-    hubJointEdges = Hub.createHub(self.hub_logic)
+    rootComp = design.rootComponent
+    joints = rootComp.joints
+
+    [lHubEdges, rHubEdges] = Hub.createHub(self.hub_logic)
     rimJointFaces = Rim.createRim(self.rim_logic)
-    (spokeHeadJointEdge, spokeThreadJointFace) = Spoke.createSpoke(self.spoke_logic)
+
+    # TODO create spoke nipples in rim
+    # TODO create ball joints for each nipple
+
+    spokes = []
+    for _ in range(self.spokes):
+        (spokeHeadEdge, spokeThreadFace) = Spoke.createSpoke(self.spoke_logic)
+        spokes.append([spokeHeadEdge, spokeThreadFace])
+
+    rimJointFaces0 = []
+    rimJointFaces1 = []
+    rimJointFaces2 = []
+    rimJointFaces3 = []
+    hubJointEdges0 = []
+    hubJointEdges1 = []
+    hubJointEdges2 = []
+    hubJointEdges3 = []
+
+    # TODO replace rim faces with nipple faces
+    for index, face in enumerate(rimJointFaces):
+        if index % 4 == 0:
+            rimJointFaces0.append(face)
+        elif index % 4 == 1:
+            rimJointFaces1.append(face)
+        elif index % 4 == 2:
+            rimJointFaces2.append(face)
+        else:
+            rimJointFaces3.append(face)
+
+    for index, edge in enumerate(lHubEdges):
+        if index % 2 == 0:
+            hubJointEdges0.append(edge)
+        else:
+            hubJointEdges2.append(edge)
+    
+    for index, edge in enumerate(rHubEdges):
+        if index % 2 == 0:
+            hubJointEdges1.append(edge)
+        else:
+            hubJointEdges3.append(edge)
+
+    for index, spoke in enumerate(spokes):
+        # if index % 2 == 0:
+        #     hubEdge = lHubEdges[int(index / 2)]
+        # else:
+        #     hubEdge = rHubEdges[int((index -1) / 2)]
+
+        if index % 4 == 0:
+            rimFace = rimJointFaces[index]
+            hubEdge = hubJointEdges0[int(index / 4)]
+            flipped = True
+        elif index % 4 == 1:
+            rimFace = rimJointFaces[int((index - 1) % 32)]
+            hubEdge = hubJointEdges1[int((index - 1) / 4)]
+            flipped = True
+        elif index % 4 == 2:
+            rimFace = rimJointFaces[int((index - 12) % 32)]
+            hubEdge = hubJointEdges2[int((index - 2) / 4)]
+            flipped = False
+        else:
+            rimFace = rimJointFaces[int((index - 13) % 32)]
+            hubEdge = hubJointEdges3[int((index - 3) / 4)]
+            flipped = False
+
+        geo0 = fusion.JointGeometry.createByCurve(hubEdge, fusion.JointKeyPointTypes.CenterKeyPoint)
+        geo1 = fusion.JointGeometry.createByCurve(spoke[0], fusion.JointKeyPointTypes.CenterKeyPoint)
+        geo2 = fusion.JointGeometry.createByNonPlanarFace(rimFace, fusion.JointKeyPointTypes.MiddleKeyPoint)
+        geo3 = fusion.JointGeometry.createByNonPlanarFace(spoke[1], fusion.JointKeyPointTypes.MiddleKeyPoint)
+
+        
+        jointInput0 = joints.createInput(geo0, geo1)
+        jointInput0.isFlipped = flipped
+        jointInput0.setAsBallJointMotion(fusion.JointDirections.ZAxisJointDirection, fusion.JointDirections.XAxisJointDirection)
+
+        jointInput1 = joints.createInput(geo2, geo3)
+        jointInput1.isFlipped = False
+        jointInput1.setAsBallJointMotion(fusion.JointDirections.ZAxisJointDirection, fusion.JointDirections.XAxisJointDirection)
+
+        joints.add(jointInput0)
+        # joints.add(jointInput1)

@@ -523,6 +523,8 @@ def createHub(logic: HubLogic):
     # get edges for wheel assembly
     lSpokeHoleEdges = []
     rSpokeHoleEdges = []
+    lSpokeHoleEdges.append(leftSpokeHoleCut.sideFaces.item(0).edges.item(0))
+    rSpokeHoleEdges.append(rightSpokeHoleCut.sideFaces.item(0).edges.item(0))
     for face in spokeHolePattern.faces:
         for edge in face.edges:
             if edge in lFlangeBodyOutsideFaceEdges:
