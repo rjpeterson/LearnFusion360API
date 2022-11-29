@@ -249,6 +249,7 @@ def createRim(self: RimLogic):
     spokeHolePatternInput.quantity = core.ValueInput.createByReal(self.spokeCount)
     spokeHolePatternInput.isSymmetric = False
     spokeHolePatternInput.totalAngle = core.ValueInput.createByReal(2 * pi)
+    # spokeHolePatternInput.patternComputeOption = 0
     spokeHolePatternFeature = patterns.add(spokeHolePatternInput)
 
     # Enlarge spoke holes in outer rim wall
@@ -266,8 +267,12 @@ def createRim(self: RimLogic):
     nippleHolePatternInput = patterns.createInput(collection, revolveAxis)
     nippleHolePatternInput.quantity = core.ValueInput.createByReal(self.spokeCount)
     nippleHolePatternInput.isSymmetric = False
+    nippleHolePatternInput.patternComputeOption = 0
     nippleHolePatternInput.totalAngle = core.ValueInput.createByReal(2 * pi)
     nippleHolePatternFeature = patterns.add(nippleHolePatternInput)
 
     newComp.isSketchFolderLightBulbOn = False
     newComp.isConstructionFolderLightBulbOn = False
+
+    # return joint faces
+    return spokeHolePatternFeature.faces

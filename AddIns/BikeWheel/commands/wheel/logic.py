@@ -116,10 +116,10 @@ class WheelLogic():
         unitsMgr = design.unitsManager
 
         self.hub_logic = Hub.HubLogic()
-        self.hub_logic.hubType = Hub.hubData[self.hub]["type"]
-        self.hub_logic.brakeType = Hub.hubData[self.hub]["brake"]
-        self.hub_logic.axleType = Hub.hubData[self.hub]["axle"]
-        self.hub_logic.axleDia = Hub.axleDiameters[self.hub_logic.hubType][self.hub_logic.axleType]
+        self.hub_logic.hubType: Hub.HubType = Hub.hubData[self.hub]["type"]
+        self.hub_logic.brakeType: Hub.BrakeType = Hub.hubData[self.hub]["brake"]
+        self.hub_logic.axleType: Hub.AxleType = Hub.hubData[self.hub]["axle"]
+        self.hub_logic.axleDia = Hub.axleDiameters[self.hub_logic.hubType.name][self.hub_logic.axleType.name]
         self.hub_logic.old = Hub.hubData[self.hub]["old"]
         self.hub_logic.leftFlangeDia = Hub.hubData[self.hub]["leftFlangeDia"]
         self.hub_logic.rightFlangeDia = Hub.hubData[self.hub]["rightFlangeDia"]
@@ -135,7 +135,7 @@ class WheelLogic():
         # self.straightPull = self.straightPullInput.value
 
         self.rim_logic = Rim.RimLogic()
-        self.rim_logic.rimProfilePath = f'{self.resource_dir}{Rim.rimProfiles[self.rim]["profile"]}'
+        self.rim_logic.rimProfilePath = f'{self.rim_logic.resource_dir}{Rim.rimProfiles[self.rim]["profile"]}'
         self.rim_logic.rim = self.rim
         self.rim_logic.size = self.size
         self.rim_logic.spokeCount = self.spokes
@@ -143,6 +143,6 @@ class WheelLogic():
         createWheel(self)
 
 def createWheel(self: WheelLogic):
-    Hub.createHub(self.hub_logic)
-    Rim.createRim(self.rim_logic)
-    Spoke.createSpoke(self.spoke_logic)
+    hubJointEdges = Hub.createHub(self.hub_logic)
+    rimJointFaces = Rim.createRim(self.rim_logic)
+    (spokeHeadJointEdge, spokeThreadJointFace) = Spoke.createSpoke(self.spoke_logic)

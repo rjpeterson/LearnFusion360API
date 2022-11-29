@@ -256,7 +256,12 @@ def createSpoke(self: SpokeLogic):
     revolveInput = revolves.createInput(headProfile, newComp.xConstructionAxis, fusion.FeatureOperations.JoinFeatureOperation)
     angle = core.ValueInput.createByReal(2 * pi)
     revolveInput.setAngleExtent(True, angle)
-    revolves.add(revolveInput)
+    headRevolve = revolves.add(revolveInput)
+
+    # get edge for wheel assembly
+    for edge in headRevolve.sideFaces.item(0).edges:
+        if edge in headRevolve.sideFaces.item(1).edges:
+            jointEdge = edge
 
     # Add threads to end
     threads = newComp.features.threadFeatures
@@ -294,10 +299,10 @@ def createSpoke(self: SpokeLogic):
     split = splitFaceFeats.add(splitFaceInput)
     
     # Get face to add threads to
-    entity = split.faces.item(0)
+    threadFace = split.faces.item(0)
 
     # define the thread input with the lenght 10 mm
-    threadInput = threads.createInput(entity, threadInfo)
+    threadInput = threads.createInput(threadFace, threadInfo)
     threadInput.isFullLength = False
     threadInput.threadLength = core.ValueInput.createByReal(threadLength)
     
@@ -305,3 +310,4 @@ def createSpoke(self: SpokeLogic):
     thread = threads.add(threadInput)
 
     newComp.isConstructionFolderLightBulbOn = False
+    return (jointEdge, threadFace)
